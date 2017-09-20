@@ -1,0 +1,205 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    tools:context="com.bitshares.bitshareswallet.SendFragment">
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_marginTop="8dp"
+        android:layout_marginLeft="12dp"
+        android:layout_marginRight="12dp"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <android.support.v4.widget.NestedScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_above="@+id/btn_send"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    style="@style/TextHeaderViewStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_from" />
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="45dp">
+
+                    <WebView
+                        android:id="@+id/webViewAvatarFrom"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp" />
+
+                    <EditText
+                        android:id="@+id/editTextFrom"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp"
+                        android:layout_toRightOf="@id/webViewAvatarFrom"
+                        android:textSize="@dimen/send_fragment_text_size"
+                        android:inputType="text"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
+                        android:text="test124"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/textViewFromId"
+                        android:layout_width="70dp"
+                        android:layout_marginRight="8dp"
+                        android:layout_marginBottom="12dp"
+                        android:layout_height="wrap_content"
+                        android:layout_alignBottom="@+id/editTextFrom"
+                        android:layout_alignParentRight="true"
+                        android:textSize="@dimen/send_fragment_text_size"
+                        android:text="#22222" />
+
+                </RelativeLayout>
+
+
+                <TextView
+                    style="@style/TextHeaderViewStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_to" />
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="45dp">
+
+                    <WebView
+                        android:id="@+id/webViewAvatarTo"
+                        android:layout_width="44dp"
+                        android:layout_height="44dp" />
+
+                    <EditText
+                        android:id="@+id/editTextTo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="8dp"
+                        android:layout_marginRight="8dp"
+                        android:layout_toRightOf="@+id/webViewAvatarTo"
+                        android:inputType="text"
+                        android:hint="@string/send_account_to_hint"
+                        android:textSize="@dimen/send_fragment_text_size"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/textViewToId"
+                        android:layout_width="70dp"
+                        android:layout_marginRight="8dp"
+                        android:layout_marginBottom="12dp"
+                        android:layout_height="wrap_content"
+                        android:layout_alignBottom="@+id/editTextTo"
+                        android:layout_alignParentRight="true"
+                        android:textSize="@dimen/send_fragment_text_size"
+                        android:text="#" />
+
+                </RelativeLayout>
+
+                <TextView
+                    style="@style/TextHeaderViewStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_quantity"
+                    android:textSize="@dimen/send_fragment_text_size" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Spinner
+                        android:id="@+id/spinner_unit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="@dimen/send_fragment_text_size"
+                        android:entries="@array/bts_unit" />
+
+                    <EditText
+                        android:id="@+id/editTextQuantity"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="4dp"
+                        android:layout_marginRight="8dp"
+                        android:textSize="@dimen/send_fragment_text_size"
+                        android:inputType="number"
+                        android:text="1" />
+                </LinearLayout>
+
+                <TextView
+                    style="@style/TextHeaderViewStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_memo"
+                    android:textSize="@dimen/send_fragment_text_size" />
+
+                <EditText
+                    android:id="@+id/editTextMemo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textSize="@dimen/send_fragment_text_size"
+                    android:hint="@string/send_memo_hint"
+                    android:inputType="text"/>
+
+                <TextView
+                    style="@style/TextHeaderViewStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_fee"
+                    android:textSize="@dimen/send_fragment_text_size" />
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Spinner
+                        android:id="@+id/spinner_fee_unit"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="@dimen/send_fragment_text_size" />
+
+                    <EditText
+                        android:id="@+id/editTextFee"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="4dp"
+                        android:textSize="@dimen/send_fragment_text_size"
+                        android:focusable="false"
+                        android:focusableInTouchMode="false"
+                        android:text="" />
+                </LinearLayout>
+
+
+            </LinearLayout>
+
+        </android.support.v4.widget.NestedScrollView>
+
+        <TextView
+            android:id="@+id/btn_send"
+            style="@style/ButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="43dp"
+            android:layout_alignParentBottom="true"
+            android:layout_centerHorizontal="true"
+            android:layout_gravity="center_vertical"
+            android:layout_margin="8dp"
+            android:text="Send" />
+
+    </RelativeLayout>
+
+
+</FrameLayout>

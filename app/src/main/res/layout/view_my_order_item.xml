@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="195dp"
+    android:layout_marginBottom="6dp"
+    android:layout_marginLeft="10dp"
+    android:layout_marginRight="10dp"
+    android:background="@drawable/exchange_rect_line"
+    android:orientation="horizontal">
+
+    <LinearLayout
+        android:layout_width="100dp"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/order_item_margin"
+        android:layout_marginTop="@dimen/order_item_margin"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/textView5"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/label_operation"
+            android:textColor="@color/label_black" />
+
+        <TextView
+            android:id="@+id/textView4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="@string/label_price"
+            android:textColor="@color/label_black" />
+
+        <TextView
+            android:id="@+id/voi_txt_target_coin_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="BTS:"
+            android:textColor="@color/label_black" />
+
+        <TextView
+            android:id="@+id/voi_txt_src_coin_name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="bitCNY"
+            android:textColor="@color/label_black" />
+
+        <TextView
+            android:id="@+id/textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="@string/label_expiration"
+            android:textColor="@color/label_black" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/order_item_margin"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/voi_txt_operation"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="TextView"
+            android:textColor="@color/label_gray" />
+
+        <TextView
+            android:id="@+id/voi_txt_price"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="TextView"
+            android:textColor="@color/label_gray" />
+
+        <TextView
+            android:id="@+id/voi_txt_target_coin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="TextView"
+            android:textColor="@color/label_gray" />
+
+        <TextView
+            android:id="@+id/voi_txt_src_coin"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="TextView"
+            android:textColor="@color/label_gray" />
+
+        <TextView
+            android:id="@+id/voi_txt_expiration"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="TextView"
+            android:textColor="@color/label_gray" />
+
+        <TextView
+            android:id="@+id/voi_txt_cacel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="right"
+            android:layout_marginRight="@dimen/order_item_margin"
+            android:layout_marginTop="@dimen/order_item_margin"
+            android:layout_weight="1"
+            android:text="@string/label_cancel_order"
+            android:textColor="@color/label_red" />
+    </LinearLayout>
+</LinearLayout>

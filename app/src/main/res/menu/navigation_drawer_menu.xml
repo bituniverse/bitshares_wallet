@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/settings"
+            android:icon="@mipmap/setting"
+            android:title="@string/settings_activity_title" />
+       <!-- <item
+            android:id="@+id/backup"
+            android:icon="@mipmap/backup"
+            android:title="Backup Wallet" /> -->
+        <item
+            android:id="@+id/about"
+            android:icon="@mipmap/about"
+            android:title="@string/about_activity_title" />
+        <item
+            android:id="@+id/logout"
+            android:icon="@mipmap/quit"
+            android:title="@string/menu_logout" />
+    </group>
+
+</menu>

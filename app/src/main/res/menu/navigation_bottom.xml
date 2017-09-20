@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/navigation_wallet"
+        android:icon="@mipmap/ic_tab_wallet_normal"
+        android:title="@string/title_wallet" />
+
+    <item
+        android:id="@+id/navigation_quotation"
+        android:icon="@mipmap/ic_tab_quotation_normal"
+        android:title="@string/title_quotation" />
+
+    <item
+        android:id="@+id/navigation_exchange"
+        android:icon="@mipmap/ic_tab_exchange_normal"
+        android:title="@string/title_exchange" />
+</menu>

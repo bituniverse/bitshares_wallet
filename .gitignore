@@ -39,6 +39,7 @@ captures/
 .idea/gradle.xml
 .idea/dictionaries
 .idea/libraries
+.idea/
 
 # Keystore files
 *.jks
@@ -48,6 +49,9 @@ captures/
 
 # Google Services (e.g. APIs or Firebase)
 google-services.json
+
+# fabric.io services
+fabric.properties
 
 # Freeline
 freeline.py

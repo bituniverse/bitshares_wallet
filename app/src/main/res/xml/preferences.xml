@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <ListPreference
+        android:key="currency_setting"
+        android:title="@string/title_currency_settings"
+        android:dialogTitle="@string/title_select_currency"
+        android:entries="@array/bts_currency_unit_options"
+        android:entryValues="@array/bts_currency_unit_values"
+        android:defaultValue="USD"/>
+
+    <ListPreference
+        android:key="full_node_api_server"
+        android:title="@string/title_full_node_api_server_select"
+        android:dialogTitle="@string/title_select_api_server"
+        android:entries="@array/full_node_api_server_options"
+        android:entryValues="@array/full_node_api_server_values"
+        android:defaultValue="autoselect"/>
+
+</PreferenceScreen>

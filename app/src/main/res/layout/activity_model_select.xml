@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.bitshares.bitshareswallet.ModelSelectActivity">
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="0dp"
+        android:background="@android:color/transparent"
+        android:theme="@style/AppTheme.AppBarOverlay">
+
+        <android.support.v7.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:elevation="0dp"
+            app:layout_collapseMode="pin"
+            app:popupTheme="@style/AppTheme.PopupOverlay"
+            app:title="@string/model_select_activity_title"
+            app:titleTextColor="@android:color/white"/>
+
+    </android.support.design.widget.AppBarLayout>
+
+    <FrameLayout
+        android:id="@+id/fragment_container"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        android:background="@android:color/transparent"
+        android:padding="8dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="30dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textViewWalletModelBin"
+                android:drawableLeft="@mipmap/wallet_model"
+                android:paddingLeft="15dp"
+                android:layout_width="250dp"
+                android:layout_height="60dp"
+                style="@style/ButtonLineStyle"
+                android:layout_gravity="center"
+                android:text="@string/import_activity_wallet_model"/>
+
+            <TextView
+                android:id="@+id/textViewWalletModelBrainKey"
+                android:layout_marginTop="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:visibility="gone"
+                style="@style/ButtonStyle"
+                android:text="Wallet Model (Brain Key)"/>
+
+            <TextView
+                android:id="@+id/textViewWalletModelWifKey"
+                android:layout_marginTop="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:visibility="gone"
+                style="@style/ButtonStyle"
+                android:text="Wallet Model (Wif Key)"/>
+
+            <TextView
+                android:id="@+id/textViewAccountModel"
+                android:paddingLeft="15dp"
+                android:drawableLeft="@mipmap/account_model"
+                android:layout_width="250dp"
+                android:layout_height="60dp"
+                android:layout_marginTop="20dp"
+                style="@style/ButtonLineStyle"
+                android:layout_gravity="center"
+                android:text="@string/import_activity_account_model"/>
+
+        </LinearLayout>
+
+    </FrameLayout>
+</android.support.design.widget.CoordinatorLayout>

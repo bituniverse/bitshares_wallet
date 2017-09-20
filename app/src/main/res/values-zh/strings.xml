@@ -1,0 +1,141 @@
+<resources>
+    <string name="app_name_full">比特股钱包</string>
+    <string name="app_name">比特股钱包</string>
+
+    <!--侧边栏-->
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="title_activity_sign_up_button">SignUpButtonActivity</string>
+    <string name="sign_up_button">登录</string>
+    <string name="dummy_content">比特股钱包</string>
+
+    <string name="splash_page_message">交易存储更安全</string>
+
+    <string name="about_activity_title">关于</string>
+    <string name="settings_activity_title">设置</string>
+    <string name="import_activity_title">导入私钥</string>
+    <string name="model_select_activity_title">登录</string>
+
+    <string name="operation_history_year">%d 年以前</string>
+    <string name="operation_history_years">%d 年以前</string>
+
+    <string name="operation_history_month">%d 月以前</string>
+    <string name="operation_history_months">%d 月以前</string>
+
+    <string name="operation_history_weeks">%d 星期前</string>
+    <string name="operation_history_week">%d 星期前</string>
+
+    <string name="operation_history_day">%d 天前</string>
+    <string name="operation_history_days">%d 天前</string>
+
+    <string name="operation_history_hours">%d 小时前</string>
+    <string name="operation_history_hour">%d 小时前</string>
+
+    <string name="operation_history_minte">%d 分钟前</string>
+    <string name="operation_history_mintes">%d 分钟前</string>
+
+    <string name="operation_history_seconds">%d 秒前</string>
+    <string name="operation_history_second">%d 秒前</string>
+
+    <string name="main_activity_loading">数据加载中…</string>
+
+    <string name="import_activity_unknown_error">发现错误</string>
+    <string name="import_activity_private_key_invalid">私钥不正确</string>
+    <string name="import_activity_account_invalid">账号不存在</string>
+    <string name="import_activity_account_not_match_key">账号密码不匹配</string>
+    <string name="import_activity_account_name_invalid">找不到账号名</string>
+    <string name="import_activity_connect_failed">无法连接到服务器</string>
+    <string name="import_activity_file_failed">从文件中读取不到信息</string>
+    <string name="import_activity_password_invalid">密码错误</string>
+    <string name="import_activity_file_bin_password_invalid">钱包文件或者密码错误</string>
+
+    <string name="password_confirm_title">请输入密码来确认这笔转账：</string>
+    <string name="password_confirm_button_confirm">确认</string>
+    <string name="password_confirm_button_cancel">取消</string>
+    <string name="password_invalid">密码错误</string>
+
+    <string name="connect_fail_message">无法连接到网络 \n请在连接到WiFi或者打开流量后重试</string>
+    <string name="connect_fail_dialog_retry">重试</string>
+
+    <string name="log_out_dialog_message">你确定想要退出登录吗？</string>
+    <string name="log_out_dialog_confirm_button">退出登录</string>
+    <string name="log_out_dialog_cancel_button">取消</string>
+
+    <string name="import_activity_wallet_model">钱包模式</string>
+    <string name="import_activity_account_model">账号模式</string>
+    <string name="title_activity_settings">设置</string>
+
+    <string name="about_activity_text">如果你喜欢我们的App，可以给我们打赏一点哦</string>
+    <string name="about_activity_version">版本</string>
+    <string name="about_activity_button">打赏</string>
+
+    <string name="send_account_to_hint">请输入账号名</string>
+    <string name="send_memo_hint">选填</string>
+
+    <string name="transaction_memo_hint">点此解锁来查看备注</string>
+    <string name="transaction_unlock_memo_dialog_message">输入你的密码来解锁：</string>
+
+    <string name="title_wallet">钱包</string>
+    <string name="title_quotation">行情</string>
+    <string name="title_exchange">交易</string>
+    <string name="title_buy">买入</string>
+    <string name="title_sell">卖出</string>
+    <string name="title_my_orders">进行中的订单</string>
+
+    <string name="label_latest">最近成交：</string>
+    <string name="label_high">最高:</string>
+    <string name="label_low">最低:</string>
+    <string name="label_volume">交易量:</string>
+    <string name="label_hour_24">24小时:</string>
+    <string name="label_price">价格:</string>
+    <string name="label_quantity">数量:</string>
+    <string name="label_total">总价:</string>
+    <string name="label_fee">手续费:</string>
+    <string name="label_balance">余额:</string>
+    <string name="label_lowest_ask">最低卖价：</string>
+    <string name="label_highest_bid">最高出价：</string>
+
+    <string name="label_reset">重置</string>
+    <string name="label_buy">买入</string>
+    <string name="label_sell">卖出</string>
+    <string name="label_buy_order">买单</string>
+    <string name="label_sell_order">卖单</string>
+    <string name="label_operation">操作:</string>
+    <string name="label_expiration">过期时间:</string>
+    <string name="label_no_open_orders">您目前还没有下任何订单</string>
+    <string name="label_cancel_order">取消订单</string>
+
+    <string name="label_please_confirm">请确认订单</string>
+    <string name="label_type_password">输入密码后确认下单</string>
+    <string name="label_ok">确认</string>
+    <string name="label_no">取消</string>
+    <string name="text_price">价格</string>
+    <string name="label_confirm_cancel_order">你确定要取消这个订单吗？</string>
+
+    <string name="menu_logout">退出登录</string>
+    <string name="import_account_name">账号：</string>
+    <string name="import_password">密码：</string>
+    <string name="label_memo">备注：</string>
+    <string name="label_from">从：</string>
+    <string name="label_to">发往：</string>
+
+    <string name="tab_send">转账</string>
+    <string name="tab_balances">资产</string>
+    <string name="tab_transactions">交易记录</string>
+    <string name="title_currency_settings">计价货币设置</string>
+    <string name="title_full_node_api_server_select">节点服务器选择</string>
+    <string name="title_select_currency">请选择货币</string>
+    <string name="title_select_api_server">请选择节点服务器</string>
+
+    <string name="label_file_path">文件路径：</string>
+    <string name="label_select_file">选择文件</string>
+    <string name="label_private_key">私钥：</string>
+
+    <string name="label_bts_cny">bitCNY/BTS</string>
+    <string name="label_bts">BTS</string>
+    <string name="label_cny">bitCNY</string>
+</resources>
