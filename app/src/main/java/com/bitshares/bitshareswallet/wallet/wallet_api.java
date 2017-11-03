@@ -6,6 +6,8 @@ import com.bitshares.bitshareswallet.market.MarketTicker;
 import com.bitshares.bitshareswallet.market.MarketTrade;
 import com.bitshares.bitshareswallet.wallet.common.ErrorCode;
 import com.bitshares.bitshareswallet.wallet.exception.NetworkStatusException;
+import com.bitshares.bitshareswallet.wallet.faucet.CreateAccountException;
+import com.bitshares.bitshareswallet.wallet.faucet.create_account_object;
 import com.bitshares.bitshareswallet.wallet.fc.crypto.aes;
 import com.bitshares.bitshareswallet.wallet.fc.crypto.sha256_object;
 import com.bitshares.bitshareswallet.wallet.fc.crypto.sha512_object;
@@ -36,8 +38,6 @@ import com.google.gson.JsonSyntaxException;
 import org.bitcoinj.core.ECKey;
 import org.spongycastle.crypto.digests.SHA256Digest;
 import org.spongycastle.crypto.digests.SHA512Digest;
-import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.jce.provider.BrokenJCEBlockCipher;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
@@ -48,11 +48,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
-import java.security.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,6 +59,13 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import de.bitsharesmunich.graphenej.BrainKey;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+import static com.bitshares.bitshareswallet.wallet.common.ErrorCode.*;
 
 public class wallet_api {
     class wallet_object {
@@ -90,7 +94,7 @@ public class wallet_api {
         }
     }
 
-    private websocket_api mWebsocketApi = new websocket_api();
+    private websocket_api mWebsocketApi;
     private wallet_object mWalletObject;
     private boolean mbLogin = false;
     private HashMap<types.public_key_type, types.private_key_type> mHashMapPub2Priv = new HashMap<>();
@@ -146,8 +150,8 @@ public class wallet_api {
 
     }
 
-    public wallet_api() {
-
+    public wallet_api(websocket_api.BitsharesNoticeListener listener) {
+        mWebsocketApi = new websocket_api(listener);
     }
 
     public int initialize() {
@@ -390,8 +394,10 @@ public class wallet_api {
         return mWebsocketApi.list_account_balances(accountId);
     }
 
-    public List<operation_history_object> get_account_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException {
-        return mWebsocketApi.get_account_history(accountId, nLimit);
+    public List<operation_history_object> get_account_history(object_id<account_object> accountId,
+                                                              object_id<operation_history_object> startId,
+                                                              int nLimit) throws NetworkStatusException {
+        return mWebsocketApi.get_account_history(accountId, startId, nLimit);
     }
 
     public List<asset_object> list_assets(String strLowerBound, int nLimit) throws NetworkStatusException {
@@ -547,6 +553,13 @@ public class wallet_api {
 
     public int import_account_password(String strAccountName,
                                        String strPassword) throws NetworkStatusException {
+
+        // try the wif key at first time, then use password model. this is from the js code.
+        /*int nRet = import_key(strAccountName, strPassword);
+        if (nRet == 0) {
+            return nRet;
+        }*/
+
         private_key privateActiveKey = private_key.from_seed(strAccountName + "active" + strPassword);
         private_key privateOwnerKey = private_key.from_seed(strAccountName + "owner" + strPassword);
 
@@ -559,6 +572,8 @@ public class wallet_api {
         }
 
         if (accountObject.active.is_public_key_type_exist(publicActiveKeyType) == false &&
+                accountObject.owner.is_public_key_type_exist(publicActiveKeyType) == false &&
+                accountObject.active.is_public_key_type_exist(publicOwnerKeyType) == false &&
                 accountObject.owner.is_public_key_type_exist(publicOwnerKeyType) == false){
             return ErrorCode.ERROR_PASSWORD_INVALID;
         }
@@ -632,7 +647,7 @@ public class wallet_api {
         account_object accountObjectFrom = get_account(strFrom);
         account_object accountObjectTo = get_account(strTo);
         if (accountObjectTo == null) {
-            return null;
+            throw new NetworkStatusException("failed to get account object");
         }
 
         operations.transfer_operation transferOperation = new operations.transfer_operation();
@@ -648,6 +663,7 @@ public class wallet_api {
             types.private_key_type privateKeyType = mHashMapPub2Priv.get(accountObjectFrom.options.memo_key);
             if (privateKeyType == null) {
                 // // TODO: 07/09/2017 获取失败的问题
+                throw new NetworkStatusException("failed to get private key");
             }
             transferOperation.memo.set_message(
                     privateKeyType.getPrivateKey(),
@@ -1027,5 +1043,133 @@ public class wallet_api {
     public List<full_account_object> get_full_accounts(List<String> names, boolean subscribe)
             throws NetworkStatusException {
         return mWebsocketApi.get_full_accounts(names, subscribe);
+    }
+
+    public List<Integer> get_market_history_buckets() throws NetworkStatusException {
+        return mWebsocketApi.get_market_history_buckets();
+    }
+
+    public int create_account_with_password(String strAccountName,
+                                            String strPassword) throws NetworkStatusException, CreateAccountException {
+        /*String[] strAddress = {
+                "https://bitshares.openledger.info/api/v1/accounts",
+                "https://openledger.io/api/v1/accounts",
+                "https://openledger.hk/api/v1/accounts"
+        };*/
+        String[] strAddress = {"https://openledger.io/api/v1/accounts"};
+
+        int nRet = -1;
+        for (int i = 0; i < strAddress.length; ++i) {
+            try {
+                nRet = create_account_with_password(
+                        strAddress[i],
+                        strAccountName,
+                        strPassword
+                );
+                if (nRet == 0) {
+                    break;
+                }
+            } catch (NetworkStatusException e) {
+                e.printStackTrace();
+                if (i == strAddress.length - 1) {
+                    throw e;
+                }
+            } catch (CreateAccountException e) {
+                e.printStackTrace();
+                if (i == strAddress.length - 1) {
+                    throw e;
+                }
+            }
+        }
+        return nRet;
+    }
+
+    public void subscribe_to_market(object_id<asset_object> a, object_id<asset_object> b) throws NetworkStatusException {
+        mWebsocketApi.subscribe_to_market(a, b);
+    }
+
+    public void set_subscribe_callback() throws NetworkStatusException {
+        mWebsocketApi.set_subscribe_callback();
+    }
+
+    public int create_account_with_password(String strServerUrl,
+                                            String strAccountName,
+                                            String strPassword) throws NetworkStatusException, CreateAccountException {
+        private_key privateActiveKey = private_key.from_seed(strAccountName + "active" + strPassword);
+        private_key privateOwnerKey = private_key.from_seed(strAccountName + "owner" + strPassword);
+
+        types.public_key_type publicActiveKeyType = new types.public_key_type(privateActiveKey.get_public_key());
+        types.public_key_type publicOwnerKeyType = new types.public_key_type(privateOwnerKey.get_public_key());
+
+        account_object accountObject = get_account(strAccountName);
+        if (accountObject != null) {
+            return ErrorCode.ERROR_ACCOUNT_OBJECT_EXIST;
+        }
+
+        create_account_object createAccountObject = new create_account_object();
+        createAccountObject.name = strAccountName;
+        createAccountObject.active_key = publicActiveKeyType;
+        createAccountObject.owner_key = publicOwnerKeyType;
+        createAccountObject.memo_key = publicActiveKeyType;
+        createAccountObject.refcode = null;
+        createAccountObject.referrer = "bituniverse";
+        Gson gson = global_config_object.getInstance().getGsonBuilder().create();
+
+        String strAddress = strServerUrl;
+        OkHttpClient okHttpClient = new OkHttpClient();
+
+        RequestBody requestBody = RequestBody.create(
+                MediaType.parse("application/json"),
+                gson.toJson(createAccountObject)
+        );
+
+        Request request = new Request.Builder()
+                .url(strAddress)
+                .addHeader("Accept", "application/json")
+                .post(requestBody)
+                .build();
+
+        create_account_object.create_account_response createAccountResponse = null;
+        try {
+            Response response = okHttpClient.newCall(request).execute();
+            if (response.isSuccessful()) {
+                createAccountResponse = gson.fromJson(
+                        response.body().string(),
+                        create_account_object.create_account_response.class
+                );
+            } else {
+                if (response.body().contentLength() != 0) {
+                    String strResponse = response.body().string();
+
+                    try {
+                        create_account_object.response_fail_error error = gson.fromJson(
+                                strResponse,
+                                create_account_object.response_fail_error.class
+                        );
+                        for (Map.Entry<String, List<String>> errorEntrySet : error.error.entrySet()) {
+                            throw new CreateAccountException(errorEntrySet.getValue().get(0));
+                        }
+                    } catch (JsonSyntaxException e) {  // 解析失败，直接抛出原有的内容
+                        throw new CreateAccountException(strResponse);
+                    }
+                }
+
+                return ERROR_SERVER_RESPONSE_FAIL;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+
+            return ERROR_NETWORK_FAIL;
+        }
+
+        if (createAccountResponse.account != null) {
+            return 0;
+        } else {
+            if (createAccountResponse.error.base.isEmpty() == false) {
+                String strError = createAccountResponse.error.base.get(0);
+                throw new CreateAccountException(strError);
+            }
+            return ERROR_SERVER_CREATE_ACCOUNT_FAIL;
+        }
     }
 }

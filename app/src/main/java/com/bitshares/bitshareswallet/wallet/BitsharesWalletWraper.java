@@ -5,10 +5,12 @@ import android.support.v7.preference.PreferenceManager;
 import android.util.Pair;
 
 import com.bitshares.bitshareswallet.BitsharesApplication;
+import com.bitshares.bitshareswallet.R;
 import com.bitshares.bitshareswallet.market.MarketTicker;
 import com.bitshares.bitshareswallet.market.MarketTrade;
 import com.bitshares.bitshareswallet.wallet.common.ErrorCode;
 import com.bitshares.bitshareswallet.wallet.exception.NetworkStatusException;
+import com.bitshares.bitshareswallet.wallet.faucet.CreateAccountException;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.asset_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.block_header;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.bucket_object;
@@ -20,11 +22,14 @@ import com.bitshares.bitshareswallet.wallet.graphene.chain.object_id;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.operation_history_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.operations;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.signed_transaction;
+import com.bitshares.bitshareswallet.wallet.graphene.chain.utils;
+import com.google.common.collect.Sets;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -32,20 +37,28 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import de.bitsharesmunich.graphenej.FileBin;
 import de.bitsharesmunich.graphenej.models.backup.LinkedAccount;
 import de.bitsharesmunich.graphenej.models.backup.WalletBackup;
-import de.bitsharesmunich.graphenej.objects.Memo;
 
 public class BitsharesWalletWraper {
+    public interface BitsharesDataObserver {
+        void onDisconnect();
+        void onMarketFillUpdate(object_id<asset_object> base, object_id<asset_object> quote);
+        void onAccountChanged();
+    }
+
     private static BitsharesWalletWraper bitsharesWalletWraper = new BitsharesWalletWraper();
-    private wallet_api mWalletApi = new wallet_api();
+    private wallet_api mWalletApi;
     private Map<object_id<account_object>, account_object> mMapAccountId2Object = new ConcurrentHashMap<>();
     private Map<object_id<account_object>, List<asset>> mMapAccountId2Asset = new ConcurrentHashMap<>();
     private Map<object_id<account_object>, List<operation_history_object>> mMapAccountId2History = new ConcurrentHashMap<>();
     private Map<object_id<asset_object>, asset_object> mMapAssetId2Object = new ConcurrentHashMap<>();
+    private Set<WeakReference<BitsharesDataObserver>> msetDataObserver;
+
     private String mstrWalletFilePath;
 
     private int mnStatus = STATUS_INVALID;
@@ -58,19 +71,73 @@ public class BitsharesWalletWraper {
     private BitsharesWalletWraper() {
         mstrWalletFilePath = BitsharesApplication.getInstance().getFilesDir().getPath();
         mstrWalletFilePath += "/wallet.json";
+        msetDataObserver = Sets.newConcurrentHashSet();
+
+        initializeWalletapi();
     }
 
     public static BitsharesWalletWraper getInstance() {
         return bitsharesWalletWraper;
     }
 
+    public void registerDataObserver(BitsharesDataObserver observer) {
+        msetDataObserver.add(new WeakReference<>(observer));
+    }
+
+    public void unregisterDataObserver(BitsharesDataObserver observer) {
+        msetDataObserver.remove(observer);
+    }
+
+    private void initializeWalletapi() {
+        mWalletApi = new wallet_api(new websocket_api.BitsharesNoticeListener() {
+            @Override
+            public void onNoticeMessage(BitsharesNoticeMessage message) {
+                if (message.listFillOrder != null) {
+                    // market发生变化，需要进行对应的数据更新，查看里面对应的id，然后进行数据更新
+                    for (operations.operation_type operationType : message.listFillOrder) {
+                        if (operationType.nOperationType == operations.ID_FILL_LMMIT_ORDER_OPERATION) {
+                            for (WeakReference<BitsharesDataObserver> observer : msetDataObserver) {
+                                if (observer.get() != null) {
+                                    operations.fill_order_operation operation = (operations.fill_order_operation)operationType.operationContent;
+                                    observer.get().onMarketFillUpdate(operation.pays.asset_id, operation.receives.asset_id);
+                                } else {
+                                    msetDataObserver.remove(observer);
+                                }
+                            }
+                        }
+                    }
+                } else if (message.bAccountChanged) {
+                    for (WeakReference<BitsharesDataObserver> observer : msetDataObserver) {
+                        if (observer.get() != null) {
+                            observer.get().onAccountChanged();
+                        } else {
+                            msetDataObserver.remove(observer);
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onDisconnect() {
+                for (WeakReference<BitsharesDataObserver> observer : msetDataObserver) {
+                    if (observer.get() != null) {
+                        observer.get().onDisconnect();
+                    } else {
+                        msetDataObserver.remove(observer);
+                    }
+                }
+            }
+        });
+    }
+
     public void reset() {
         mWalletApi.reset();
-        mWalletApi = new wallet_api();
+        initializeWalletapi();
         mMapAccountId2Object.clear();;
         mMapAccountId2Asset.clear();;
         mMapAccountId2History.clear();
         mMapAssetId2Object.clear();;
+        msetDataObserver.clear();;
 
         File file = new File(mstrWalletFilePath);
         file.delete();
@@ -184,7 +251,7 @@ public class BitsharesWalletWraper {
             }
         } catch (NetworkStatusException e) {
             e.printStackTrace();
-            return ErrorCode.ERROR_IMPORT_NETWORK_FAIL;
+            return ErrorCode.ERROR_NETWORK_FAIL;
         }
 
         save_wallet_file();
@@ -311,9 +378,21 @@ public class BitsharesWalletWraper {
                                                               boolean bRefresh) throws NetworkStatusException {
         List<operation_history_object> listHistoryObject = mMapAccountId2History.get(accountObjectId);
         if (listHistoryObject == null || bRefresh) {
-            listHistoryObject = mWalletApi.get_account_history(accountObjectId, nLimit);
+            listHistoryObject = mWalletApi.get_account_history(
+                    accountObjectId,
+                    new object_id<operation_history_object>(0, operation_history_object.class),
+                    nLimit
+            );
             mMapAccountId2History.put(accountObjectId, listHistoryObject);
         }
+        return listHistoryObject;
+    }
+
+    public List<operation_history_object> get_account_history(object_id<account_object> accountObjectId,
+                                                              object_id<operation_history_object> startId,
+                                                              int nLimit) throws NetworkStatusException {
+        List<operation_history_object> listHistoryObject =
+                mWalletApi.get_account_history(accountObjectId, startId, nLimit);
         return listHistoryObject;
     }
 
@@ -391,77 +470,6 @@ public class BitsharesWalletWraper {
         );
         return signedTransaction;
     }
-
-    public BitshareData prepare_data_to_display(boolean bRefresh) {
-        try {
-            List<asset> listBalances = BitsharesWalletWraper.getInstance().list_balances(bRefresh);
-
-            List<operation_history_object> operationHistoryObjectList = BitsharesWalletWraper.getInstance().get_history(bRefresh);
-            HashSet<object_id<account_object>> hashSetObjectId = new HashSet<object_id<account_object>>();
-            HashSet<object_id<asset_object>> hashSetAssetObject = new HashSet<object_id<asset_object>>();
-
-            List<Pair<operation_history_object, Date>> listHistoryObjectTime = new ArrayList<Pair<operation_history_object, Date>>();
-            for (operation_history_object historyObject : operationHistoryObjectList) {
-                block_header blockHeader = BitsharesWalletWraper.getInstance().get_block_header(historyObject.block_num);
-                listHistoryObjectTime.add(new Pair<>(historyObject, blockHeader.timestamp));
-                if (historyObject.op.nOperationType <= operations.ID_CREATE_ACCOUNT_OPERATION) {
-                    operations.base_operation operation = (operations.base_operation)historyObject.op.operationContent;
-                    hashSetObjectId.addAll(operation.get_account_id_list());
-                    hashSetAssetObject.addAll(operation.get_asset_id_list());
-                }
-            }
-
-            // 保证默认数据一直存在
-            hashSetAssetObject.add(new object_id<asset_object>(0, asset_object.class));
-            
-            //// TODO: 06/09/2017 这里需要优化到一次调用
-            
-            for (asset assetBalances : listBalances) {
-                hashSetAssetObject.add(assetBalances.asset_id);
-            }
-
-            List<object_id<account_object>> listAccountObjectId = new ArrayList<object_id<account_object>>();
-            listAccountObjectId.addAll(hashSetObjectId);
-            Map<object_id<account_object>, account_object> mapId2AccountObject =
-                    BitsharesWalletWraper.getInstance().get_accounts(listAccountObjectId);
-
-
-            List<object_id<asset_object>> listAssetObjectId = new ArrayList<object_id<asset_object>>();
-            listAssetObjectId.addAll(hashSetAssetObject);
-
-            // 生成id 2 asset_object映身
-            Map<object_id<asset_object>, asset_object> mapId2AssetObject =
-                    BitsharesWalletWraper.getInstance().get_assets(listAssetObjectId);
-
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(BitsharesApplication.getInstance());
-            String strCurrencySetting = prefs.getString("currency_setting", "USD");
-
-            asset_object currencyObject = mWalletApi.list_assets(strCurrencySetting, 1).get(0);
-            mapId2AssetObject.put(currencyObject.id, currencyObject);
-
-            hashSetAssetObject.add(currencyObject.id);
-
-            listAssetObjectId.clear();
-            listAssetObjectId.addAll(hashSetAssetObject);
-
-            Map<object_id<asset_object>, bucket_object> mapAssetId2Bucket = get_market_histories_base(listAssetObjectId);
-
-            mBitshareData = new BitshareData();
-            mBitshareData.assetObjectCurrency = currencyObject;
-            mBitshareData.listBalances = listBalances;
-            mBitshareData.listHistoryObject = listHistoryObjectTime;
-            mBitshareData.mapId2AssetObject = mapId2AssetObject;
-            mBitshareData.mapId2AccountObject = mapId2AccountObject;
-            mBitshareData.mapAssetId2Bucket = mapAssetId2Bucket;
-
-            return mBitshareData;
-
-        } catch (NetworkStatusException e) {
-            e.printStackTrace();
-        }
-
-        return null;
-    }
     
     // 获取对于基础货币的所有市场价格
     public Map<object_id<asset_object>, bucket_object> get_market_histories_base(List<object_id<asset_object>> listAssetObjectId) throws NetworkStatusException {
@@ -470,12 +478,12 @@ public class BitsharesWalletWraper {
         Date dateObject = dynamicGlobalPropertyObject.time;
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(dateObject);
-        calendar.add(Calendar.HOUR, -12);
+        calendar.add(Calendar.HOUR, -24);
 
         Date dateObjectStart = calendar.getTime();
 
         calendar.setTime(dateObject);
-        calendar.add(Calendar.SECOND, 30);
+        calendar.add(Calendar.HOUR, 1);
 
         Date dateObjectEnd = calendar.getTime();
         
@@ -501,6 +509,38 @@ public class BitsharesWalletWraper {
         }
         
         return mapId2BucketObject;
+    }
+
+    private bucket_object get_market_history(object_id<asset_object> baseAsset, object_id<asset_object> quoteAsset) throws NetworkStatusException {
+        dynamic_global_property_object dynamicGlobalPropertyObject = mWalletApi.get_dynamic_global_properties();
+
+        Date dateObject = dynamicGlobalPropertyObject.time;
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(dateObject);
+        calendar.add(Calendar.HOUR, -24);
+
+        Date dateObjectStart = calendar.getTime();
+
+        calendar.setTime(dateObject);
+        calendar.add(Calendar.HOUR, 1);
+
+        Date dateObjectEnd = calendar.getTime();
+
+        Map<object_id<asset_object>, bucket_object> mapId2BucketObject = new HashMap<>();
+
+        List<bucket_object> listBucketObject = mWalletApi.get_market_history(
+                baseAsset,
+                quoteAsset,
+                3600,
+                dateObjectStart,
+                dateObjectEnd
+        );
+
+        if (listBucketObject.isEmpty() == false) {
+            return listBucketObject.get(0);
+        } else {
+            return null;
+        }
     }
 
     public List<bucket_object> get_market_history(object_id<asset_object> assetObjectId1,
@@ -568,9 +608,9 @@ public class BitsharesWalletWraper {
         return mWalletApi.buy(base, quote, rate, amount, timeoutSecs);
     }
 
-    public BitshareData getBitshareData() {
+    /*public BitshareData getBitshareData() {
         return mBitshareData;
-    }
+    }*/
 
     public account_object get_account_object(String strAccount) throws NetworkStatusException {
         return mWalletApi.get_account(strAccount);
@@ -598,5 +638,33 @@ public class BitsharesWalletWraper {
 
     public global_property_object get_global_properties() throws NetworkStatusException {
         return mWalletApi.get_global_properties();
+    }
+
+    public int create_account_with_password(String strAccountName,
+                                            String strPassword) throws CreateAccountException {
+        try {
+            return mWalletApi.create_account_with_password(strAccountName, strPassword);
+        } catch (NetworkStatusException e) {
+            e.printStackTrace();
+            return ErrorCode.ERROR_NETWORK_FAIL;
+        }
+    }
+
+    public int subscribe_to_market(object_id<asset_object> a, object_id<asset_object> b) {
+        try {
+            mWalletApi.subscribe_to_market(a, b);
+        } catch (NetworkStatusException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int set_subscribe_callback() {
+        try {
+            mWalletApi.set_subscribe_callback();
+        } catch (NetworkStatusException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 }

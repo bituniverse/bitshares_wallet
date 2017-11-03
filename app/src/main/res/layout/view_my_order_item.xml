@@ -38,7 +38,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/order_item_margin"
             android:layout_weight="1"
-            android:text="BTS:"
+            android:text="@string/label_quantity"
             android:textColor="@color/label_black" />
 
         <TextView
@@ -47,7 +47,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/order_item_margin"
             android:layout_weight="1"
-            android:text="bitCNY"
+            android:text="@string/label_total"
             android:textColor="@color/label_black" />
 
         <TextView

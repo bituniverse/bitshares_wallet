@@ -1,0 +1,140 @@
+﻿<resources>
+    <string name="app_name_full">Cartera de Bitshares</string>
+    <string name="app_name">BTS Wallet</string>
+
+    <string name="navigation_drawer_open">Abrir menu de Navegacion</string>
+    <string name="navigation_drawer_close">Cerrar menu de navegacion</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hola, seccion en blanco</string>
+
+    <string name="title_activity_sign_up_button">Resgistrarse </string>
+    <string name="sign_up_button">Iniciar Sesion</string>
+    <string name="dummy_content">Cartera de Bitshares</string>
+
+    <string name="splash_page_message">Almacenamiento y transacciones mas seguras</string>
+
+    <string name="about_activity_title">Acerca de</string>
+    <string name="settings_activity_title">Ajustes</string>
+    <string name="import_activity_title">Importar Llave</string>
+    <string name="model_select_activity_title">Iniciar Sesion</string>
+
+    <string name="operation_history_year">hace %d años</string>
+    <string name="operation_history_years">hace %d años</string>
+
+    <string name="operation_history_month">hace %d meses</string>
+    <string name="operation_history_months">hace %d meses</string>
+
+    <string name="operation_history_weeks">hace %d semanas</string>
+    <string name="operation_history_week">hace %d semanas</string>
+
+    <string name="operation_history_day">hace %d dias</string>
+    <string name="operation_history_days">hace %d dias</string>
+
+    <string name="operation_history_hours">hace %d horas</string>
+    <string name="operation_history_hour">hace %d horas</string>
+
+    <string name="operation_history_minte">hace %d minutos</string>
+    <string name="operation_history_mintes">hace %d minutos</string>
+
+    <string name="operation_history_seconds">hace %d segundos</string>
+    <string name="operation_history_second">hace %d segundos</string>
+
+    <string name="main_activity_loading">Cargando…</string>
+
+    <string name="import_activity_unknown_error">Ha ocurrido un error</string>
+    <string name="import_activity_private_key_invalid">Llave Privada Erronea</string>
+    <string name="import_activity_account_invalid">La cuenta no existe</string>
+    <string name="import_activity_account_not_match_key">La llave privada no encaja con el usuario</string>
+    <string name="import_activity_account_name_invalid">El usuario no existe</string>
+    <string name="import_activity_connect_failed">No ha sido posible conectarse al servidor</string>
+    <string name="import_activity_file_failed">No se ha podido leer el contenido del archivo </string>
+    <string name="import_activity_password_invalid">Contraseña Erronea</string>
+    <string name="import_activity_file_bin_password_invalid">Archivo de la Cartera o contraseña erronea</string>
+
+    <string name="password_confirm_title">Porfavor escriba la contraseña para confirmar la transaccion:</string>
+    <string name="password_confirm_button_confirm">CONFIRMAR</string>
+    <string name="password_confirm_button_cancel">CANCELAR</string>
+    <string name="password_invalid">CONTRASEÑA ERRONEA</string>
+
+    <string name="connect_fail_message"> Impossible conectarse a internet \nPorfavor reinténtalo despues de encender el Wifi o los Datos Moviles</string>
+    <string name="connect_fail_dialog_retry">Reintentar</string>
+
+    <string name="log_out_dialog_message">Seguro que desea cerrar la sesion?</string>
+    <string name="log_out_dialog_confirm_button">CERRAR SESION</string>
+    <string name="log_out_dialog_cancel_button">CANCELAR</string>
+
+    <string name="import_activity_wallet_model">Modelo de Cartera</string>
+    <string name="import_activity_account_model">Modelo de Cuenta</string>
+    <string name="title_activity_settings">Ajustes</string>
+
+    <string name="about_activity_text">Si te gusta la aplicacion, Apreciarimos recibir una donacion.</string>
+    <string name="about_activity_version">Version</string>
+    <string name="about_activity_button">DONAR</string>
+
+    <string name="send_account_to_hint">Escriba el Usuario</string>
+    <string name="send_memo_hint">Opcional</string>
+
+    <string name="transaction_memo_hint">Toque para desbloquaer el memorandum</string>
+    <string name="transaction_unlock_memo_dialog_message">escriba su contraseña para desbloquear:</string>
+
+    <string name="title_wallet">Cartera</string>
+    <string name="title_quotation">Precios</string>
+    <string name="title_exchange">Bolsa</string>
+    <string name="title_buy">Comprar</string>
+    <string name="title_sell">Vender</string>
+    <string name="title_my_orders">Ordenes Abiertas</string>
+
+    <string name="label_latest">Ultimo:</string>
+    <string name="label_high">Alto:</string>
+    <string name="label_low">Bajo:</string>
+    <string name="label_volume">Volumen:</string>
+    <string name="label_hour_24">24h</string>
+    <string name="label_price">Precio:</string>
+    <string name="label_quantity">Cantidad:</string>
+    <string name="label_total">Total:</string>
+    <string name="label_fee">Cuota:</string>
+    <string name="label_balance">Balance:</string>
+    <string name="label_lowest_ask">Compra mas baja:</string>
+    <string name="label_highest_bid">Venta mas alta:</string>
+
+    <string name="label_reset">RESETEAR</string>
+    <string name="label_buy">COMPRAR</string>
+    <string name="label_sell">VENDER</string>
+    <string name="label_buy_order">ORDEN DE COMPRA</string>
+    <string name="label_sell_order">ORDEN DE VENTA</string>
+    <string name="label_operation">Operacion:</string>
+    <string name="label_expiration">Vencimiento:</string>
+    <string name="label_no_open_orders">No tiene ordenes abiertas</string>
+    <string name="label_cancel_order">CANCELAR ORDEN</string>
+
+    <string name="label_please_confirm">POR FAVOR CONFIRMAR</string>
+    <string name="label_type_password">Escriba la contraseña para confirmar </string>
+    <string name="label_ok">OK</string>
+    <string name="label_no">NO</string>
+    <string name="text_price">Precio</string>
+    <string name="label_confirm_cancel_order">Esta seguro de que quiere cancelar la orden?</string>
+
+    <string name="menu_logout">Cerrar Sesion</string>
+    <string name="import_account_name">Usuario:</string>
+    <string name="import_password">Contraseña:</string>
+    <string name="label_memo">Memorandum:</string>
+    <string name="label_from">De:</string>
+    <string name="label_to">A:</string>
+
+    <string name="tab_send">Enviar</string>
+    <string name="tab_balances">Balances</string>
+    <string name="tab_transactions">Transacciones</string>
+    <string name="title_currency_settings">Ajustes de Moneda</string>
+    <string name="title_full_node_api_server_select">Nodo completo Seleccionar Servidor de API</string>
+    <string name="title_select_currency">Elegir Moneda</string>
+    <string name="title_select_api_server">Nodo completo Seleccionar Servidor de API</string>
+
+    <string name="label_file_path">camino de archivo:</string>
+    <string name="label_select_file">Seleccionar Archivo</string>
+    <string name="label_private_key">Llave privada:</string>
+    
+    <string name="label_bts_cny">bitCNY/BTS</string>
+    <string name="label_bts">BTS</string>
+    <string name="label_cny">bitCNY</string>
+</resources>

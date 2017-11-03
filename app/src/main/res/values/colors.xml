@@ -17,5 +17,14 @@
     <color name="label_gray">#a2a2a2</color>
     <color name="label_red">#ff0000</color>
     <color name="quotation_top_red">#FF3333</color>
-    <color name="quotation_top_green">#00CC00</color>
+    <color name="quotation_top_green">#009933</color>
+    <color name="candle_green">#00CC00</color>
+
+    <color name="home_page_bg">#1E1E26</color>
+    <color name="common_divider">#303341</color>
+    <color name="text_grey_light">#A7ADBC</color>
+
+    <color name="ma5">#823E66</color>
+    <color name="ma10">#B99C7A</color>
+    <color name="ma20">#3C7193</color>
 </resources>

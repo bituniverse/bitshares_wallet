@@ -4,14 +4,13 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
-import android.text.Layout;
+import android.text.TextUtils;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -19,20 +18,7 @@ import android.widget.TextView;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.common.ConvertUriToFilePath;
 import com.bitshares.bitshareswallet.wallet.common.ErrorCode;
-import com.bitshares.bitshareswallet.wallet.private_key;
 import com.kaopiz.kprogresshud.KProgressHUD;
-
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.jar.Manifest;
-
-import de.bitsharesmunich.graphenej.FileBin;
-import de.bitsharesmunich.graphenej.models.backup.PrivateKeyBackup;
-import de.bitsharesmunich.graphenej.models.backup.Wallet;
-import de.bitsharesmunich.graphenej.models.backup.WalletBackup;
 
 import static android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK;
 import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
@@ -92,7 +78,6 @@ public class ImportActivty extends AppCompatActivity {
                 // 将按钮转换成为进度条
                 mProcessHud.show();
 
-
                 String strAccount = ((EditText)findViewById(R.id.editTextAccountName)).getText().toString();
                 String strPassword = ((EditText)findViewById(R.id.editTextPassword)).getText().toString();
                 String strPrivateKey = ((EditText)findViewById(R.id.editTextPrivateKey)).getText().toString();
@@ -102,6 +87,11 @@ public class ImportActivty extends AppCompatActivity {
                 } else if (mnModel == WALLET_MODEL_WIF_KEY) {
                     processImport(strAccount, strPassword, strPrivateKey);
                 } else if (mnModel == WALLET_MODEL_BIN_FILE) {
+                    if (TextUtils.isEmpty(strPassword)) {
+                        processErrorCode(ErrorCode.ERROR_PASSWORD_INVALID);
+                        return;
+                    }
+
                     String strFilePath = ((EditText)findViewById(R.id.editTextFilePath)).getText().toString();
                     processImport(strAccount, strPassword, strFilePath);
                 } else if (mnModel == WALLET_MODEL_BRAIN_KEY) {
@@ -163,7 +153,21 @@ public class ImportActivty extends AppCompatActivity {
                 Uri uri = data.getData();
                 String strFilePath = uri.getPath();
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                    strFilePath = ConvertUriToFilePath.getPathFromURI(this, uri);
+                    String strFilePathAboveKitKat = null;
+                    try {
+                        strFilePathAboveKitKat = ConvertUriToFilePath.getPathFromURI(this, uri);
+                    } catch (IllegalArgumentException e) {
+//                        Caused by java.lang.IllegalArgumentException: column '_data' does not exist
+//                            at android.database.AbstractCursor.getColumnIndexOrThrow(AbstractCursor.java:333)
+//                            at android.database.CursorWrapper.getColumnIndexOrThrow(CursorWrapper.java:87)
+//                            at com.bitshares.bitshareswallet.wallet.common.ConvertUriToFilePath.getDataColumn(ConvertUriToFilePath.java:112)
+//                            at com.bitshares.bitshareswallet.wallet.common.ConvertUriToFilePath.getPathFromURI(ConvertUriToFilePath.java:79)
+//                            at com.bitshares.bitshareswallet.ImportActivty.onActivityResult(ImportActivty.java:156)
+                        e.printStackTrace();
+                    }
+                    if (!TextUtils.isEmpty(strFilePathAboveKitKat)) {
+                        strFilePath = strFilePathAboveKitKat;
+                    }
                 }
 
                 EditText editTextFilePath = (EditText)findViewById(R.id.editTextFilePath);
@@ -216,13 +220,7 @@ public class ImportActivty extends AppCompatActivity {
                 }
 
                 if (nRet == 0) {
-                    BitsharesWalletWraper.getInstance().prepare_data_to_display(true);
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mProcessHud.dismiss();
-                        }
-                    });
+                    mProcessHud.dismiss();
                     Intent intent = new Intent(ImportActivty.this, MainActivity.class);
                     intent.setFlags(FLAG_ACTIVITY_CLEAR_TASK | FLAG_ACTIVITY_NEW_TASK);
                     startActivity(intent);
@@ -248,7 +246,7 @@ public class ImportActivty extends AppCompatActivity {
                     textView.setText(R.string.import_activity_account_name_invalid);
                 } else if (nRet == ErrorCode.ERROR_IMPORT_NOT_MATCH_PRIVATE_KEY) {
                     textView.setText(R.string.import_activity_private_key_invalid);
-                } else if (nRet == ErrorCode.ERROR_IMPORT_NETWORK_FAIL) {
+                } else if (nRet == ErrorCode.ERROR_NETWORK_FAIL) {
                     textView.setText(R.string.import_activity_connect_failed);
                 } else if (nRet == ErrorCode.ERROR_PASSWORD_INVALID) {
                     textView.setText(R.string.import_activity_password_invalid);

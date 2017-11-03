@@ -1,74 +1,82 @@
 package com.bitshares.bitshareswallet;
 
-import android.content.BroadcastReceiver;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
-import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
-import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bitshares.bitshareswallet.market.MarketStat;
-import com.bitshares.bitshareswallet.wallet.Broadcast;
+import com.bitshares.bitshareswallet.market.MarketTicker;
+import com.bitshares.bitshareswallet.viewmodel.QuotationViewModel;
+import com.github.mikephil.charting.charts.CandleStickChart;
+import com.github.mikephil.charting.charts.CombinedChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.CandleData;
+import com.github.mikephil.charting.data.CandleDataSet;
+import com.github.mikephil.charting.data.CandleEntry;
+import com.github.mikephil.charting.data.CombinedData;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Locale;
 
-public class QuotationFragment extends BaseFragment implements MarketStat.OnMarketStatUpdateListener {
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+public class QuotationFragment extends BaseFragment {
     private static final String TAG = "QuotationFragment";
-    private static final long MARKET_STAT_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(30);
-    private static final long TICKER_STAT_INTERVAL_MILLIS = TimeUnit.SECONDS.toMillis(2);
 
-    private QuotationRecyclerViewAdapter quotationRecyclerViewAdapter;
-    private List<QuotationItem> quotation = new ArrayList<>();
+    private QuotationCurrencyPairAdapter quotationCurrencyPairAdapter;
+    private OnFragmentInteractionListener mListener;
 
-    private MarketStat marketStat;
-    private MarketStat tickerStat;
-    private String baseAsset;
-    private String quoteAsset;
-    private TextView titleValue;
-    private TextView timeText;
-    private TextView highsAndLowsText;
-    private ImageView valueIcon;
-    private ImageView valueIcon2;
-    private View viewLayoutLatest;
+    @BindView(R.id.chart) CombinedChart mChart;
+    @BindView(R.id.recyclerView) RecyclerView mRecyclerView;
+    @BindView(R.id.layoutChartLoading) View mLoadingChartView;
+    @BindView(R.id.layoutLoadingError) View mLoadingErrorView;
+    @BindView(R.id.layoutSelected) View mviewLayoutSelected;
 
-    private BroadcastReceiver currencyUpdateReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            marketStat.unsubscribe(baseAsset, quoteAsset);
-            tickerStat.unsubscribe(baseAsset, quoteAsset);
-
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-            baseAsset = prefs.getString("currency_setting", "USD");
-            quoteAsset = "BTS";
-            marketStat.subscribe(baseAsset, quoteAsset, MarketStat.STAT_MARKET_HISTORY,
-                    MARKET_STAT_INTERVAL_MILLIS, QuotationFragment.this);
-            tickerStat.subscribe(baseAsset, quoteAsset, MarketStat.STAT_MARKET_TICKER,
-                    TICKER_STAT_INTERVAL_MILLIS, QuotationFragment.this);
-        }
-    };
+    private static final int SHOW_CHART_VIEW_NO_DATA = 0;
+    private static final int SHOW_CHART_VIEW_LODING = 1;
+    private static final int SHOW_CHART_VIEW_LODING_FAIL = 2;
+    private static final int SHOW_CHART_VIEW_READY = 3;
+    private static final int SHOW_CHART_VIEW_NOT_SUPPORT = 4;
 
     public QuotationFragment() {
-        marketStat = new MarketStat();
-        tickerStat = new MarketStat();
+
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        if (context instanceof OnFragmentInteractionListener) {
+            mListener = (OnFragmentInteractionListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnFragmentInteractionListener");
+        }
     }
 
     @Override
@@ -85,154 +93,314 @@ public class QuotationFragment extends BaseFragment implements MarketStat.OnMark
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_quotation, container, false);
+        ButterKnife.bind(this, view);
 
-        Context context = view.getContext();
-        RecyclerView recyclerView = (RecyclerView) view.findViewById(R.id.recyclerView);
-
-        quotationRecyclerViewAdapter = new QuotationRecyclerViewAdapter(quotation);
-        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(context);
+        quotationCurrencyPairAdapter = new QuotationCurrencyPairAdapter(getActivity());
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-        recyclerView.setLayoutManager(linearLayoutManager);
-        recyclerView.setAdapter(quotationRecyclerViewAdapter);
-        recyclerView.setItemAnimator(null);
-        int spacingInPixels = 1;
-        recyclerView.addItemDecoration(new SpacesItemDecoration(spacingInPixels));
+        mRecyclerView.setLayoutManager(linearLayoutManager);
+        mRecyclerView.setAdapter(quotationCurrencyPairAdapter);
+        mRecyclerView.setItemAnimator(null);
 
-        titleValue = (TextView) view.findViewById(R.id.textTotalBalance);
-        timeText = (TextView) view.findViewById(R.id.timeText);
-        highsAndLowsText = (TextView) view.findViewById(R.id.highsAndLowsText);
-        valueIcon = (ImageView) view.findViewById(R.id.valueIcon);
-        valueIcon2 = (ImageView) view.findViewById(R.id.valueIcon2);
+        initChart();
 
-        viewLayoutLatest = view.findViewById(R.id.layoutLatest);
+        mChart.setOnChartValueSelectedListener(new OnChartValueSelectedListener() {
+            @Override
+            public void onValueSelected(Entry e, Highlight h) {
+                if (e instanceof BarEntry) {
+                    return;
+                }
+                
+                CandleEntry candleEntry = (CandleEntry)e;
+                mviewLayoutSelected.setVisibility(View.VISIBLE);
+                TextView textViewDate = (TextView) mviewLayoutSelected.findViewById(R.id.textViewDate);
+                TextView textViewHigh = (TextView) mviewLayoutSelected.findViewById(R.id.textViewHigh);
+                TextView textViewLow = (TextView) mviewLayoutSelected.findViewById(R.id.textViewLow);
+                TextView textViewChange = (TextView) mviewLayoutSelected.findViewById(R.id.textViewChange);
+
+                MarketStat.HistoryPrice historyPrice = (MarketStat.HistoryPrice) candleEntry.getData();
+                SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd HH:mm");
+                textViewDate.setText(simpleDateFormat.format(historyPrice.date));
+
+                DecimalFormat decimalFormat = new DecimalFormat("#.####");
+                textViewHigh.setText(decimalFormat.format(candleEntry.getHigh()));
+                textViewLow.setText(decimalFormat.format(candleEntry.getHigh()));
+
+                float fChange = (candleEntry.getClose() - candleEntry.getOpen()) / candleEntry.getOpen();
+                if (!MainActivity.rasingColorRevers) {
+                    if (fChange < 0) {
+                        textViewChange.setTextColor(ContextCompat.getColor(getActivity(), R.color.quotation_top_red));
+                        textViewChange.setText(
+                                String.format(
+                                        Locale.ENGLISH, "%.2f%%",
+                                        fChange)
+                        );
+
+                    } else {
+                        textViewChange.setTextColor(ContextCompat.getColor(getActivity(), R.color.quotation_top_green));
+                        textViewChange.setText(
+                                String.format(
+                                        Locale.ENGLISH, "+%.2f%%",
+                                        fChange)
+                        );
+                    }
+                } else {
+                    if (fChange < 0) {
+                        textViewChange.setTextColor(ContextCompat.getColor(getActivity(), R.color.quotation_top_green));
+                        textViewChange.setText(
+                                String.format(
+                                        Locale.ENGLISH, "%.2f%%",
+                                        fChange)
+                        );
+                    } else {
+                        textViewChange.setTextColor(ContextCompat.getColor(getActivity(), R.color.quotation_top_red));
+                        textViewChange.setText(
+                                String.format(
+                                        Locale.ENGLISH, "+%.2f%%",
+                                        fChange)
+                        );
+                    }
+                }
+
+
+            }
+
+            @Override
+            public void onNothingSelected() {
+                mviewLayoutSelected.setVisibility(View.INVISIBLE);
+            }
+        });
+
+        QuotationViewModel viewModel = ViewModelProviders.of(getActivity()).get(QuotationViewModel.class);
+        quotationCurrencyPairAdapter.setOnItemClickListenr(new QuotationCurrencyPairAdapter.OnItemClickListner() {
+            @Override
+            public void onItemClick(View view, int position) {
+                //mListener.notifyCurrencyPairChange();
+                if (quotationCurrencyPairAdapter.getSelectedMarketTicker() != null) {
+                    MarketTicker marketTicker = quotationCurrencyPairAdapter.getSelectedMarketTicker().marketTicker;
+                    viewModel.selectedMarketTicker(new Pair(marketTicker.base, marketTicker.quote));
+                }
+
+            }
+        });
 
         return view;
+    }
+
+    private void initChart() {
+        int colorHomeBg = getResources().getColor(android.R.color.transparent);
+        int colorLine = getResources().getColor(R.color.common_divider);
+        int colorText = getResources().getColor(R.color.text_grey_light);
+
+        mChart.setDescription(null);
+        mChart.setDrawGridBackground(true);
+        mChart.setBackgroundColor(colorHomeBg);
+        mChart.setGridBackgroundColor(colorHomeBg);
+        mChart.setScaleYEnabled(false);
+        mChart.setPinchZoom(true);
+
+        mChart.setNoDataText(getString(R.string.main_activity_loading));
+        mChart.setAutoScaleMinMaxEnabled(true);
+        mChart.setDragEnabled(true);
+        mChart.setDoubleTapToZoomEnabled(false);
+
+        XAxis xAxis = mChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(true);
+        xAxis.setGridColor(colorLine);
+        xAxis.setTextColor(colorText);
+        xAxis.setLabelCount(3);
+        //xAxis.setSpaceBetweenLabels(4);
+
+        YAxis leftAxis = mChart.getAxisLeft();
+        leftAxis.setLabelCount(4, false);
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setDrawAxisLine(true);
+        leftAxis.setGridColor(colorLine);
+        leftAxis.setTextColor(colorText);
+
+        YAxis rightAxis = mChart.getAxisRight();
+        rightAxis.setTextSize(8);
+        rightAxis.setLabelCount(5, false);
+        rightAxis.setDrawGridLines(false);
+        rightAxis.setDrawAxisLine(true);
+        rightAxis.setGridColor(colorLine);
+        rightAxis.setTextColor(colorText);
+        rightAxis.setAxisMinimum(0);
     }
 
     @Override
     public void onShow() {
         super.onShow();
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-        baseAsset = prefs.getString("currency_setting", "USD");
-        quoteAsset = "BTS";
-        marketStat.subscribe(baseAsset, quoteAsset, MarketStat.STAT_MARKET_HISTORY,
-                MARKET_STAT_INTERVAL_MILLIS, this);
-        tickerStat.subscribe(baseAsset, quoteAsset, MarketStat.STAT_MARKET_TICKER,
-                TICKER_STAT_INTERVAL_MILLIS, this);
 
-        IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(Broadcast.CURRENCY_UPDATED);
-        LocalBroadcastManager.getInstance(getContext())
-                .registerReceiver(currencyUpdateReceiver, intentFilter);
+        QuotationViewModel viewModel = ViewModelProviders.of(getActivity()).get(QuotationViewModel.class);
+        viewModel.getMarketTicker().observe(
+                this,
+                marketTickerListResource -> {
+                    switch (marketTickerListResource.status) {
+                        case ERROR:
+                            break;
+                        case LOADING:
+                            if (marketTickerListResource.data != null && marketTickerListResource.data.size() != 0) {
+                                quotationCurrencyPairAdapter.notifyDataUpdated(marketTickerListResource.data);
+                                MarketTicker marketTicker = quotationCurrencyPairAdapter.getSelectedMarketTicker().marketTicker;
+                                viewModel.selectedMarketTicker(new Pair(marketTicker.base, marketTicker.quote));
+                            }
+                            break;
+                        case SUCCESS:
+                            quotationCurrencyPairAdapter.notifyDataUpdated(marketTickerListResource.data);
+                            MarketTicker marketTicker = quotationCurrencyPairAdapter.getSelectedMarketTicker().marketTicker;
+                            viewModel.selectedMarketTicker(new Pair(marketTicker.base, marketTicker.quote));
+                            break;
+                    }
+                });
+
+        viewModel.getHistoryPrice().observe(this, historyPriceListResource -> {
+            switch (historyPriceListResource.status) {
+                case ERROR:
+                    changeShowedView(SHOW_CHART_VIEW_LODING_FAIL);
+                    break;
+                case LOADING:
+                    changeShowedView(SHOW_CHART_VIEW_LODING);
+                    break;
+                case SUCCESS:
+                    changeShowedView(SHOW_CHART_VIEW_READY);
+                    updateChartData(historyPriceListResource.data);
+                    break;
+            }
+        });
+        viewModel.getSelectedMarketTicker().observe(this, currencyPair -> quotationCurrencyPairAdapter.notifyDataSetChanged() );
     }
 
     @Override
     public void onHide() {
         super.onHide();
-        marketStat.unsubscribe(baseAsset, quoteAsset);
-        tickerStat.unsubscribe(baseAsset, quoteAsset);
-        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(currencyUpdateReceiver);
     }
 
-    @Override
-    public void onMarketStatUpdate(MarketStat.Stat stat) {
-        if(getView()==null)
-            return;
-        if (stat.prices != null && stat.prices.length > 0) {
-            quotation.clear();
-            for (int i = 0; i < stat.prices.length; i++) {
-                MarketStat.HistoryPrice price = stat.prices[i];
-                quotation.add(new QuotationItem(price.date.getTime(), price.high, price.low, price.volume));
-            }
-            quotationRecyclerViewAdapter.notifyDataSetChanged();
-        }
-        if (stat.ticker != null) {
-            Log.d(TAG, String.format("ticker>>> base:%s, quote:%s, latest:%g, change:%s",
-                    stat.ticker.base, stat.ticker.quote, stat.ticker.latest, stat.ticker.percent_change));
-            valueIcon.setVisibility(View.VISIBLE);
-            valueIcon2.setVisibility(View.VISIBLE);
+    private void updateChartData(List<MarketStat.HistoryPrice> historyPriceList) {
+        class xAxisValueFormater implements IAxisValueFormatter {
+            private List<MarketStat.HistoryPrice> mListPrices;
 
-            double change = 0.f;
-            try {
-                change = Double.parseDouble(stat.ticker.percent_change);
-            } catch (Exception e) {
-                e.printStackTrace();
+            public xAxisValueFormater(List<MarketStat.HistoryPrice> listPrices) {
+                mListPrices = listPrices;
             }
-            DecimalFormat decimalFormat = new DecimalFormat("#.######");
-            if (change > 0) {
-                valueIcon.setVisibility(View.VISIBLE);
-                valueIcon2.setVisibility(View.GONE);
-                if (!MainActivity.rasingColorRevers) {
-                    valueIcon.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.quotation_top_triangle4));
-                    highsAndLowsText.setTextColor(ContextCompat.getColor(getContext(), R.color.quotation_top_green));
-                    titleValue.setTextColor(ContextCompat.getColor(getContext(), R.color.quotation_top_green));
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                int nValue = (int)value;
+                if (nValue < mListPrices.size()) {
+                    Date date = mListPrices.get(nValue).date;
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd HH:mm");
+
+                    return simpleDateFormat.format(date);
                 } else {
-                    valueIcon.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.quotation_top_triangle2));
-                    highsAndLowsText.setTextColor(ContextCompat.getColor(getContext(), R.color.quotation_top_red));
-                    titleValue.setTextColor(ContextCompat.getColor(getContext(), R.color.quotation_top_red));
+                    return "";
                 }
-            } else if (change < 0) {
-                valueIcon.setVisibility(View.VISIBLE);
-                valueIcon2.setVisibility(View.GONE);
-                if (!MainActivity.rasingColorRevers) {
-                    valueIcon.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.quotation_top_triangle3));
-                    highsAndLowsText.setTextColor(ContextCompat.getColor(getContext(), R.color.quotation_top_red));
-                    titleValue.setTextColor(ContextCompat.getColor(getContext(), R.color.quotation_top_red));
-                } else {
-                    valueIcon.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.quotation_top_triangle));
-                    highsAndLowsText.setTextColor(ContextCompat.getColor(getContext(), R.color.quotation_top_green));
-                    titleValue.setTextColor(ContextCompat.getColor(getContext(), R.color.quotation_top_green));
-                }
-            } else {
-                valueIcon.setVisibility(View.GONE);
-                valueIcon2.setVisibility(View.VISIBLE);
             }
-
-            DecimalFormat decimalFormat2 = new DecimalFormat("#.##");
-            highsAndLowsText.setText(String.format("%s%%", decimalFormat2.format(change)));
-            titleValue.setText(decimalFormat.format(stat.ticker.latest));
         }
-        viewLayoutLatest.setVisibility(View.VISIBLE);
 
-        if (stat.latestTradeDate != null) {
-            SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-            timeText.setText(formatter.format(stat.latestTradeDate));
-        }
+        initializeData(historyPriceList);
+        IAxisValueFormatter xvalueFormater = new xAxisValueFormater(historyPriceList);
+        mChart.getXAxis().setValueFormatter(xvalueFormater);
     }
 
-    public class SpacesItemDecoration extends RecyclerView.ItemDecoration {
-        private int space;
-        private Paint dividerPaint;
+    private void initializeData(List<MarketStat.HistoryPrice> listHistoryPrice) {
+        mviewLayoutSelected.setVisibility(View.INVISIBLE);
+        List<CandleEntry> candleEntryList = new ArrayList<>();
+        List<BarEntry> barEntryList = new ArrayList<>();
+        int i = 0;
+        for (MarketStat.HistoryPrice price : listHistoryPrice) {
+            int nPosition = i++;
+            CandleEntry candleEntry = new CandleEntry(nPosition, (float)price.high, (float)price.low, (float)price.open, (float)price.close, price);
+            candleEntryList.add(candleEntry);
 
-        public SpacesItemDecoration(int space) {
-            dividerPaint = new Paint();
-            dividerPaint.setColor(ContextCompat.getColor(getContext(), R.color.grey));
-            this.space = space;
+            BarEntry barEntry = new BarEntry((float)nPosition, (float)price.volume);
+            barEntryList.add(barEntry);
         }
 
-        @Override
-        public void getItemOffsets(Rect outRect, View view,
-                                   RecyclerView parent, RecyclerView.State state) {
-            outRect.left = space;
-            outRect.right = space;
-            outRect.bottom = space;
+        CandleDataSet set = new CandleDataSet(candleEntryList, "");
+        set.setAxisDependency(YAxis.AxisDependency.LEFT);
+        set.setShadowWidth(0.7f);
+        set.setDecreasingPaintStyle(Paint.Style.FILL);
+        int nColorGreen = ContextCompat.getColor(getActivity(), R.color.candle_green);
+        int nColorRed = ContextCompat.getColor(getActivity(), R.color.quotation_top_red);
+        if (!MainActivity.rasingColorRevers) {
+            set.setDecreasingColor(nColorRed);
+            set.setIncreasingColor(nColorGreen);
+            set.setNeutralColor(nColorGreen);
+        } else {
+            set.setDecreasingColor(nColorGreen);
+            set.setIncreasingColor(nColorRed);
+            set.setNeutralColor(nColorRed);
+        }
+        set.setIncreasingPaintStyle(Paint.Style.FILL);
+        set.setShadowColorSameAsCandle(true);
+        set.setHighlightLineWidth(0.5f);
+        set.setHighLightColor(Color.WHITE);
+        set.setDrawValues(false);
+        set.setForm(Legend.LegendForm.EMPTY);
 
-            if (parent.getChildAdapterPosition(view) == 0)
-                outRect.top = space;
+        BarDataSet barDataSet = new BarDataSet(barEntryList, "");
+        barDataSet.setAxisDependency(YAxis.AxisDependency.RIGHT);
+        barDataSet.setColor(getResources().getColor(R.color.grey), 25);
+        barDataSet.setDrawValues(false);
+        barDataSet.setForm(Legend.LegendForm.EMPTY);
+
+        CombinedData combinedData = mChart.getCombinedData();
+        if (combinedData == null) {
+            combinedData = new CombinedData();
         }
 
-        @Override
-        public void onDraw(Canvas c, RecyclerView parent, RecyclerView.State state) {
-            int childCount = parent.getChildCount();
-            int left = parent.getPaddingLeft();
-            int right = parent.getWidth() - parent.getPaddingRight();
+        CandleData candleData = combinedData.getCandleData();
+        if (candleData == null) {
+            candleData = new CandleData();
+        }
+        if (candleData.getDataSetCount() > 0) {
+            candleData.removeDataSet(0);
+            candleData.notifyDataChanged();
+            mChart.notifyDataSetChanged();
+        }
+        candleData.addDataSet(set);
+        candleData.notifyDataChanged();
+        combinedData.setData(candleData);
 
-            for (int i = 0; i < childCount - 1; i++) {
-                View view = parent.getChildAt(i);
-                float top = view.getBottom();
-                float bottom = view.getBottom() + space;
-                c.drawRect(left, top, right, bottom, dividerPaint);
-            }
+        BarData barData = combinedData.getBarData();
+        if (barData == null) {
+            barData = new BarData();
+        }
+
+        if (barData.getDataSetCount() > 0) {
+            barData.removeDataSet(0);
+            barData.notifyDataChanged();
+            mChart.notifyDataSetChanged();
+        }
+        barData.addDataSet(barDataSet);
+        barData.notifyDataChanged();
+        combinedData.setData(barData);
+
+        mChart.setData(combinedData);
+        mChart.notifyDataSetChanged();
+        mChart.fitScreen();
+        mChart.setVisibleXRangeMaximum(48);
+        mChart.moveViewToX(mChart.getXChartMax() - 48);
+    }
+
+    private void changeShowedView(int nShowView) {
+        switch (nShowView) {
+            case SHOW_CHART_VIEW_LODING:
+                mLoadingChartView.setVisibility(View.VISIBLE);
+                mChart.setVisibility(View.INVISIBLE);
+                mLoadingErrorView.setVisibility(View.INVISIBLE);
+                break;
+            case SHOW_CHART_VIEW_LODING_FAIL:
+                mLoadingChartView.setVisibility(View.INVISIBLE);
+                mChart.setVisibility(View.INVISIBLE);
+                mLoadingErrorView.setVisibility(View.VISIBLE);
+                break;
+            case SHOW_CHART_VIEW_READY:
+                mLoadingChartView.setVisibility(View.INVISIBLE);
+                mChart.setVisibility(View.VISIBLE);
+                mLoadingErrorView.setVisibility(View.INVISIBLE);
+                break;
         }
     }
 }

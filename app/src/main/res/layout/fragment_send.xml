@@ -134,7 +134,7 @@
                         android:layout_marginLeft="4dp"
                         android:layout_marginRight="8dp"
                         android:textSize="@dimen/send_fragment_text_size"
-                        android:inputType="number"
+                        android:inputType="numberDecimal"
                         android:text="1" />
                 </LinearLayout>
 

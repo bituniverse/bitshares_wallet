@@ -13,7 +13,7 @@
     <string name="sign_up_button">LOG IN</string>
     <string name="dummy_content">BitShares Wallet</string>
 
-    <string name="splash_page_message">Safer way for storage and transaction</string>
+    <string name="splash_page_message">Safer way for storage and trade</string>
 
     <string name="about_activity_title">About</string>
     <string name="settings_activity_title">Settings</string>
@@ -84,13 +84,13 @@
     <string name="title_exchange">Exchange</string>
     <string name="title_buy">Buy</string>
     <string name="title_sell">Sell</string>
-    <string name="title_my_orders">My open orders</string>
+    <string name="title_my_orders">Orders</string>
 
     <string name="label_latest">Latest:</string>
     <string name="label_high">High:</string>
     <string name="label_low">Low:</string>
     <string name="label_volume">Vol:</string>
-    <string name="label_hour_24">24h</string>
+    <string name="label_hour_24">24h:</string>
     <string name="label_price">Price:</string>
     <string name="label_quantity">Quantity:</string>
     <string name="label_total">Total:</string>
@@ -114,7 +114,7 @@
     <string name="label_ok">OK</string>
     <string name="label_no">NO</string>
     <string name="text_price">Price</string>
-    <string name="label_confirm_cancel_order">Are you sure want to cancel this order?</string>
+    <string name="label_confirm_cancel_order">Are you sure you want to cancel this order?</string>
 
     <string name="menu_logout">Log out</string>
     <string name="import_account_name">Account Name:</string>
@@ -124,8 +124,8 @@
     <string name="label_to">To:</string>
 
     <string name="tab_send">Send</string>
-    <string name="tab_balances">Balances</string>
-    <string name="tab_transactions">Transactions</string>
+    <string name="tab_balances">Balance</string>
+    <string name="tab_transactions">Transaction</string>
     <string name="title_currency_settings">Currency Settings</string>
     <string name="title_full_node_api_server_select">Full Node Api Server Select</string>
     <string name="title_select_currency">Choose a currency</string>
@@ -134,8 +134,47 @@
     <string name="label_file_path">File Path:</string>
     <string name="label_select_file">Select File</string>
     <string name="label_private_key">Private Key:</string>
-    
+
     <string name="label_bts_cny">bitCNY/BTS</string>
     <string name="label_bts">BTS</string>
     <string name="label_cny">bitCNY</string>
+
+    <string name="create_account_activity_title">Sign Up</string>
+    <string name="create_account_password_confirm">Confirm password:</string>
+    <string name="create_account_activity_button">SIGN UP</string>
+    <string name="create_account_activity_network_fail">Failed to connect to server</string>
+    <string name="create_account_activity_account_object_exist">The account has already existed</string>
+    <string name="create_account_activity_response_fail">Server failed to response</string>
+    <string name="create_account_activity_create_fail">Failed to sign up</string>
+
+    <string name="create_account_account_name_error_full_letter">The account name cannot contain only letters</string>
+    <string name="create_account_account_name_too_short">The account name is too short</string>
+    <string name="create_account_account_name_error_start_letter">The account name should start with a letter</string>
+    <string name="create_account_account_name_error_dash_end">The account name can not end with a dash</string>
+    <string name="create_account_check_box">I confirm I have backed up my password (password is the only certification, you will lose all property if you lose it)</string>
+    <string name="create_account_password_requirement">The password should include more than 12 characters with at least 1 capital letter and 1 number</string>
+    <string name="create_account_password_confirm_error">Two passwords do not match</string>
+
+    <string name="create_account_account_name_empty">The account name is empty</string>
+    <string name="create_account_password_empty">The password is empty</string>
+    <string name="create_account_password_confirm_empty">The confirmation password is empty</string>
+    <string name="create_account_check_box_confirm">You should confirm the content after the checkbox.</string>
+
+
+    <string name="quotation_cureency_select_title">Quotation currency selection</string>
+    <string name="quotation_cureency_select_dialog_title">Choose currency pair</string>
+
+    <string name="trade_fragment_quantity">Quantity</string>
+    <string name="label_change">Change:</string>
+
+    <string name="promotion_dialog_title">New App BitUniverse</string>
+    <string name="promotion_dialog_subtitle">Check BTS and Bitcoin price in BitShares DEX and other exchanges</string>
+    <string name="promotion_dialog_positive_button">Download</string>
+
+    <string name="loading_candle_data_failed">Failed to load data. Please try again later</string>
+    <string name="loading_candle_data">Loading candle sticker chart</string>
+
+    <string name="loading_history_failed">Failed to load data. Please try again later</string>
+    <string name="loading_history_data">Loading transaction data</string>
+
 </resources>

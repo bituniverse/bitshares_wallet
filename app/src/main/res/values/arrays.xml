@@ -14,6 +14,42 @@
         <item>CNY</item>
     </string-array>
 
+    <string-array name="quotation_currency_pair_options">
+        <item>BTS:USD</item>
+        <item>BTS:CNY</item>
+        <item>BTC:BTS</item>
+        <item>BTC:USD</item>
+        <item>BTC:CNY</item>
+        <item>ETH:BTS</item>
+        <item>ETH:USD</item>
+        <item>ETH:CNY</item>
+        <item>HERO:BTS</item>
+        <item>OBITS:BTS</item>
+        <item>SMOKE:BTS</item>
+        <item>USDT:USD</item>
+        <item>OCT:CNY</item>
+        <item>YOYOW:CNY</item>
+        <item>DASH:BTS</item>
+    </string-array>
+
+    <string-array name="quotation_currency_pair_values">
+        <item>BTS:USD</item>
+        <item>BTS:CNY</item>
+        <item>OPEN.BTC:BTS</item>
+        <item>OPEN.BTC:USD</item>
+        <item>OPEN.BTC:CNY</item>
+        <item>OPEN.ETH:BTS</item>
+        <item>OPEN.ETH:USD</item>
+        <item>OPEN.ETH:CNY</item>
+        <item>HERO:BTS</item>
+        <item>OBITS:BTS</item>
+        <item>SMOKE:BTS</item>
+        <item>OPEN.USDT:USD</item>
+        <item>OCT:CNY</item>
+        <item>YOYOW:CNY</item>
+        <item>OPEN.DASH:BTS</item>
+    </string-array>
+
     <string-array name="full_node_api_server_options">
         <item>Autoselect</item>
         <item>Openledger (Nuremberg, Germany)</item>

@@ -1,0 +1,141 @@
+﻿<resources>
+    <string name="app_name_full">Bitshares Portemonnee</string>
+    <string name="app_name">BTS Portemonnee</string>
+
+    <!--ä¾§è¾¹æ -->
+    <string name="navigation_drawer_open">Open navigatie menu</string>
+    <string name="navigation_drawer_close">Sluit navigatie menu</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hallo leeg fragment</string>
+
+    <string name="title_activity_sign_up_button">SignUpButtonActivity</string>
+    <string name="sign_up_button">LOG IN</string>
+    <string name="dummy_content">BitShares Portemonnee</string>
+
+    <string name="splash_page_message">Een veiligere manier van bewaren en transacties doen</string>
+
+    <string name="about_activity_title">Over</string>
+    <string name="settings_activity_title">Instellingen</string>
+    <string name="import_activity_title">Key importeren</string>
+    <string name="model_select_activity_title">Log In</string>
+
+    <string name="operation_history_year">%d jaar geleden</string>
+    <string name="operation_history_years">%d jaren geleden</string>
+
+    <string name="operation_history_month">%d maand geleden</string>
+    <string name="operation_history_months">%d maanden geleden</string>
+
+    <string name="operation_history_weeks">%d weken geleden</string>
+    <string name="operation_history_week">%d week geleden</string>
+
+    <string name="operation_history_day">%d dag geleden</string>
+    <string name="operation_history_days">%d dagen geleden</string>
+
+    <string name="operation_history_hours">%d uren geleden</string>
+    <string name="operation_history_hour">%d uur geleden</string>
+
+    <string name="operation_history_minte">%d minuut geleden</string>
+    <string name="operation_history_mintes">%d minuten geleden</string>
+
+    <string name="operation_history_seconds">%d seconden geleden</string>
+    <string name="operation_history_second">%d seconde geleden</string>
+
+    <string name="main_activity_loading">Loadingâ€¦</string>
+
+    <string name="import_activity_unknown_error">Er deed zich een fout voor.</string>
+    <string name="import_activity_private_key_invalid">Ongeldige private key.</string>
+    <string name="import_activity_account_invalid">De account bestaat niet.</string>
+    <string name="import_activity_account_not_match_key">De account en private key komen niet overeen.</string>
+    <string name="import_activity_account_name_invalid">De account kan niet worden gevonden.</string>
+    <string name="import_activity_connect_failed">Geen verbinding met server.</string>
+    <string name="import_activity_file_failed">Kan het bestand niet lezen.</string>
+    <string name="import_activity_password_invalid">Ongeldig wachtwoord.</string>
+    <string name="import_activity_file_bin_password_invalid">Ongeldig wachtwoord of wallet bestand.</string>
+
+    <string name="password_confirm_title">Voer uw wachtwoord in om de transactie te bevestigen:</string>
+    <string name="password_confirm_button_confirm">BEVESTIGEN</string>
+    <string name="password_confirm_button_cancel">ANNULEREN</string>
+    <string name="password_invalid">Ongeldig wachtwoord.</string>
+
+    <string name="connect_fail_message">Geen internetverbinding. \nProbeer alstublieft opnieuw na het inschakelen van WIFI of mobiele data.</string>
+    <string name="connect_fail_dialog_retry">Opnieuw proberen</string>
+
+    <string name="log_out_dialog_message">Weet u zeker dat u uit wilt loggen?</string>
+    <string name="log_out_dialog_confirm_button">LOG UIT</string>
+    <string name="log_out_dialog_cancel_button">ANNULEREN</string>
+
+    <string name="import_activity_wallet_model">Wallet Model</string>
+    <string name="import_activity_account_model">Account Model</string>
+    <string name="title_activity_settings">Instellingen</string>
+
+    <string name="about_activity_text">Houd u van onze app? We waarderen een donatie enorm.</string>
+    <string name="about_activity_version">Versie</string>
+    <string name="about_activity_button">DONEER</string>
+
+    <string name="send_account_to_hint">Typ de account naam</string>
+    <string name="send_memo_hint">Optioneel</string>
+
+    <string name="transaction_memo_hint">Tik om de memo te ontgrendelen</string>
+    <string name="transaction_unlock_memo_dialog_message">Typ uw wachtwoord om te ontgrendelen</string>
+
+    <string name="title_wallet">Portemonnee</string>
+    <string name="title_quotation">Quotes</string>
+    <string name="title_exchange">Exchange</string>
+    <string name="title_buy">Kopen</string>
+    <string name="title_sell">Verkopen</string>
+    <string name="title_my_orders">Mijn open orders</string>
+
+    <string name="label_latest">Laatste:</string>
+    <string name="label_high">Hoog:</string>
+    <string name="label_low">Laag:</string>
+    <string name="label_volume">Vol:</string>
+    <string name="label_hour_24">24u</string>
+    <string name="label_price">Prijs:</string>
+    <string name="label_quantity">Hoeveelheid:</string>
+    <string name="label_total">Totaal:</string>
+    <string name="label_fee">Fee:</string>
+    <string name="label_balance">Saldo:</string>
+    <string name="label_lowest_ask">Laagste vraag:</string>
+    <string name="label_highest_bid">Hoogste bod:</string>
+
+    <string name="label_reset">RESET</string>
+    <string name="label_buy">KOOP</string>
+    <string name="label_sell">VERKOOP</string>
+    <string name="label_buy_order">KOOP ORDER</string>
+    <string name="label_sell_order">VERKOOP ORDER</string>
+    <string name="label_operation">Operation:</string>
+    <string name="label_expiration">Expiration:</string>
+    <string name="label_no_open_orders">U heeft op dit moment geen open orders</string>
+    <string name="label_cancel_order">ANNULEER ORDER</string>
+
+    <string name="label_please_confirm">Bevestig alstublieft</string>
+    <string name="label_type_password">Typ uw wachtwoord</string>
+    <string name="label_ok">OK</string>
+    <string name="label_no">NEE</string>
+    <string name="text_price">Prijs</string>
+    <string name="label_confirm_cancel_order">Weet u zeker dat u wilt annuleren?</string>
+
+    <string name="menu_logout">Log uit</string>
+    <string name="import_account_name">Account Naam:</string>
+    <string name="import_password">Wachtwoord:</string>
+    <string name="label_memo">Memo:</string>
+    <string name="label_from">Van:</string>
+    <string name="label_to">Naar:</string>
+
+    <string name="tab_send">Verzenden</string>
+    <string name="tab_balances">Saldi</string>
+    <string name="tab_transactions">Transacties</string>
+    <string name="title_currency_settings">Valuta instellingen</string>
+    <string name="title_full_node_api_server_select">Full Node Api Server Selecteren</string>
+    <string name="title_select_currency">Kies een valuta</string>
+    <string name="title_select_api_server">Kies een Full Node Api Server</string>
+
+    <string name="label_file_path">Bestandslocatie:</string>
+    <string name="label_select_file">Bestand Selecteren</string>
+    <string name="label_private_key">Private Key:</string>
+    
+    <string name="label_bts_cny">bitCNY/BTS</string>
+    <string name="label_bts">BTS</string>
+    <string name="label_cny">bitCNY</string>
+</resources>

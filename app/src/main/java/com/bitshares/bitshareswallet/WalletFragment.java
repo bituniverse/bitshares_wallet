@@ -1,5 +1,6 @@
 package com.bitshares.bitshareswallet;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -9,7 +10,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
@@ -18,11 +19,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.bitshares.bitshareswallet.room.BitsharesBalanceAsset;
+import com.bitshares.bitshareswallet.viewmodel.WalletViewModel;
 import com.bitshares.bitshareswallet.wallet.BitshareData;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.signed_transaction;
 
+import java.util.List;
 import java.util.Locale;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
 
 
 /**
@@ -45,30 +52,19 @@ public class WalletFragment extends BaseFragment {
 
     private OnFragmentInteractionListener mListener;
 
-    private ViewPager mViewPager;
-    private TabLayout mTabLayout;
     private BtsFragmentPageAdapter mWalletFragmentPageAdapter;
     private Handler mHandler = new Handler();
 
     private SendFragment mSendFragment;
 
+    @BindView(R.id.fw_viewPager) ViewPager mViewPager;
+    @BindView(R.id.tabLayout) TabLayout mTabLayout;
+    @BindView(R.id.textTotalBalance) TextView textViewBalances;
+    @BindView(R.id.textViewCurrency) TextView textViewCurency;
+
     public WalletFragment() {
         // Required empty public constructor
     }
-
-
-    private Runnable mRefreshRunnable = new Runnable() {
-        private int nCount = 0;
-        @Override
-        public void run() {
-            if (nCount == 0) {
-                fetchData(false);
-            } else {
-                fetchData(true);
-            }
-            mHandler.postDelayed(this, 15 * 1000);
-        }
-    };
 
     public void onNewIntent(Intent intent){
         String strAction = intent.getStringExtra("action");
@@ -111,33 +107,83 @@ public class WalletFragment extends BaseFragment {
     @Override
     public void onShow() {
         super.onShow();
-        mHandler.post(mRefreshRunnable);
+
+        WalletViewModel walletViewModel = ViewModelProviders.of(getActivity()).get(WalletViewModel.class);
+        walletViewModel.getBalanceData().observe(
+                this, resourceBalanceList -> {
+                    switch (resourceBalanceList.status) {
+                        case ERROR:
+                            processError();
+                            break;
+                        case SUCCESS:
+                            processShowdata(resourceBalanceList.data);
+                            break;
+                        case LOADING:
+                            if (resourceBalanceList.data != null && resourceBalanceList.data.size() != 0) {
+                                processShowdata(resourceBalanceList.data);
+                            }
+                            break;
+                    }
+                });
     }
 
     @Override
     public void onHide() {
         super.onHide();
-        mHandler.removeCallbacks(mRefreshRunnable);
     }
 
-    public void notifyTransferComplete(signed_transaction signedTransaction) {
-        // 沿用该线程，阻塞住了系统来进行数据更新
-        new Thread(new Runnable() {
+    void processShowdata(List<BitsharesBalanceAsset> bitsharesBalanceAssetList) {
+        long totalBTS = 0;
+        long totalBalance = 0;
+        for (BitsharesBalanceAsset bitsharesBalanceAsset : bitsharesBalanceAssetList) {
+            totalBTS += bitsharesBalanceAsset.total;
+            totalBalance += bitsharesBalanceAsset.balance;
+        }
+
+        if (bitsharesBalanceAssetList.isEmpty() == false) {
+            BitsharesBalanceAsset bitsharesBalanceAsset = bitsharesBalanceAssetList.get(0);
+            double exchangeRate = (double) totalBalance / bitsharesBalanceAsset.currency_precision / totalBTS * bitsharesBalanceAsset.base_precision;
+            totalBTS /= bitsharesBalanceAssetList.get(0).base_precision;
+            totalBalance /= bitsharesBalanceAssetList.get(0).currency_precision;
+
+            String strTotalCurrency = String.format(
+                    Locale.ENGLISH,
+                    "= %d %s (%.4f %s/%s)",
+                    totalBalance,
+                    bitsharesBalanceAsset.currency,
+                    exchangeRate,
+                    "BTS",
+                    bitsharesBalanceAsset.currency
+            );
+
+            textViewCurency.setText(strTotalCurrency);
+        }
+
+        String strTotalBalance = String.format(Locale.ENGLISH, "%d %s", totalBTS, "BTS");
+        textViewBalances.setText(strTotalBalance);
+        textViewCurency.setVisibility(View.VISIBLE);
+
+        mWalletFragmentPageAdapter.notifyUpdate();
+    }
+
+    void processError() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        builder.setPositiveButton(R.string.connect_fail_dialog_retry, new DialogInterface.OnClickListener() {
             @Override
-            public void run() {
-                BitshareData bitshareData = BitsharesWalletWraper.getInstance().prepare_data_to_display(true);
-                notifyBitshareDatachanged(bitshareData);
+            public void onClick(DialogInterface dialog, int which) {
+                WalletViewModel walletViewModel = ViewModelProviders.of(getActivity()).get(WalletViewModel.class);
+                walletViewModel.retry();
             }
-        }).start();
+        });
+        builder.setMessage(R.string.connect_fail_message);
+        builder.show();
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_wallet, container, false);
-        mViewPager = (ViewPager) view.findViewById(R.id.fw_viewPager);
-
-        mTabLayout = (TabLayout) view.findViewById(R.id.tabLayout);
+        ButterKnife.bind(this, view);
         Resources res = getResources();
         mWalletFragmentPageAdapter = new BtsFragmentPageAdapter(getFragmentManager());
         mWalletFragmentPageAdapter.addFragment(BalancesFragment.newInstance("", ""), res.getString(R.string.tab_balances));
@@ -171,76 +217,6 @@ public class WalletFragment extends BaseFragment {
         return view;
     }
 
-    public void fetchData(final boolean bRefresh) {
-        BitshareData bitshareData = null;
-        if (bRefresh == false) {
-            bitshareData = BitsharesWalletWraper.getInstance().getBitshareData();
-        }
-
-        if (bitshareData == null) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    BitshareData bitshareData = null;
-                    int nRet = BitsharesWalletWraper.getInstance().build_connect();
-                    if (nRet == 0) {
-                        bitshareData = BitsharesWalletWraper.getInstance().prepare_data_to_display(true);
-                    }
-
-                    if (bitshareData != null) {
-                        notifyBitshareDatachanged(bitshareData);
-                    } else {
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (!getActivity().isFinishing()) {
-                                    AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-                                    builder.setPositiveButton(R.string.connect_fail_dialog_retry, new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            fetchData(bRefresh);
-                                        }
-                                    });
-                                    builder.setMessage(R.string.connect_fail_message);
-                                    builder.show();
-                                }
-                            }
-                        });
-                    }
-                }
-            }).start();
-        } else {
-            notifyBitshareDatachanged(bitshareData);
-        }
-    }
-
-    private void notifyBitshareDatachanged(BitshareData bitshareData) {
-        final BitshareData.TotalBalances totalBalances = bitshareData.getTotalAmountBalances();
-
-        getActivity().runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if(getView()==null)
-                    return;
-                TextView textViewBalances = (TextView) getView().findViewById(R.id.textTotalBalance);
-                textViewBalances.setText(totalBalances.strTotalBalances);
-
-                TextView textViewCurency = (TextView) getView().findViewById(R.id.textViewCurrency);
-
-                String strTotalCurrency = String.format(
-                        Locale.ENGLISH,
-                        "= %s (%s)",
-                        totalBalances.strTotalCurrency,
-                        totalBalances.strExchangeRate
-                );
-
-                textViewCurency.setText(strTotalCurrency);
-                textViewCurency.setVisibility(View.VISIBLE);
-
-                mWalletFragmentPageAdapter.notifyUpdate();
-            }
-        });
-    }
     // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {

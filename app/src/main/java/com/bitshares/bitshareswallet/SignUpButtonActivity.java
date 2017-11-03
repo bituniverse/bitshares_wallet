@@ -22,6 +22,14 @@ public class SignUpButtonActivity extends AppCompatActivity {
         findViewById(R.id.sign_up_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                Intent intent = new Intent(SignUpButtonActivity.this, CreateAccountActivity.class);
+                startActivity(intent);
+            }
+        });
+
+        findViewById(R.id.buttonLogin).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
                 Intent intent = new Intent(SignUpButtonActivity.this, ModelSelectActivity.class);
                 startActivity(intent);
             }

@@ -32,27 +32,31 @@
             android:theme="@style/ActivityTheme" />
         <activity
             android:name=".SignUpActivity"
-            android:theme="@style/ActivityTheme"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:theme="@style/ActivityTheme" />
         <activity
             android:name=".ImportActivty"
-            android:theme="@style/ActivityTheme"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:theme="@style/ActivityTheme" />
         <activity
             android:name=".ModelSelectActivity"
-            android:theme="@style/ActivityTheme"
-            android:screenOrientation="portrait" />
+            android:screenOrientation="portrait"
+            android:theme="@style/ActivityTheme" />
 
         <meta-data
             android:name="io.fabric.ApiKey"
             android:value="1516f2abc1f71a4a06a0b84c26caaa01398302fb" />
 
-        <activity android:name=".SettingsActivity"
-            android:screenOrientation="portrait"/>
+        <activity
+            android:name=".SettingsActivity"
+            android:screenOrientation="portrait" />
         <activity
             android:name=".AboutActivity"
-            android:theme="@style/ActivityTheme"
-            android:screenOrientation="portrait"></activity>
+            android:screenOrientation="portrait"
+            android:theme="@style/ActivityTheme" />
+        <activity android:name=".CreateAccountActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/ActivityTheme" />
     </application>
 
 </manifest>

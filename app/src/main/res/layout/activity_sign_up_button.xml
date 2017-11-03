@@ -28,18 +28,17 @@
             android:src="@mipmap/splash_logo"/>
 
         <TextView
-            android:id="@+id/buttonImport"
+            android:id="@+id/buttonLogin"
             android:layout_width="wrap_content"
             android:layout_height="32dp"
-            android:layout_gravity="end"
+            android:layout_alignParentRight="true"
             android:layout_marginRight="20dp"
             android:layout_marginTop="25dp"
             android:background="@android:color/transparent"
-            android:text="Import"
+            android:text="@string/model_select_activity_title"
             android:textAlignment="center"
             android:textColor="@android:color/white"
-            android:textSize="20sp"
-            android:visibility="gone" />
+            android:textSize="20sp" />
 
         <TextView
             android:layout_below="@+id/splash_logo"
@@ -79,8 +78,8 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="bottom|center_horizontal"
                 android:layout_marginBottom="80dp"
-                android:layout_marginLeft="8dp"
-                android:layout_marginRight="8dp"
+                android:layout_marginLeft="40dp"
+                android:layout_marginRight="40dp"
                 android:background="@android:color/transparent"
                 android:orientation="horizontal"
                 tools:ignore="UselessParent">
@@ -91,7 +90,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="50dp"
                     android:layout_weight="1"
-                    android:text="@string/sign_up_button" />
+                    android:text="@string/create_account_activity_title" />
 
             </LinearLayout>
         </FrameLayout>

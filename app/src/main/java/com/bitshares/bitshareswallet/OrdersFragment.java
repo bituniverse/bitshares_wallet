@@ -25,14 +25,12 @@ import com.bitshares.bitshareswallet.market.OpenOrder;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.Broadcast;
 import com.bitshares.bitshareswallet.wallet.exception.NetworkStatusException;
-import com.bitshares.bitshareswallet.wallet.full_account_object;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.limit_order_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.utils;
 import com.kaopiz.kprogresshud.KProgressHUD;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 
@@ -112,14 +110,14 @@ public class OrdersFragment extends BaseFragment
 
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(Broadcast.CURRENCY_UPDATED);
-        LocalBroadcastManager.getInstance(getContext())
-                .registerReceiver(currencyUpdateReceiver, intentFilter);
+        LocalBroadcastManager.getInstance(getContext()).registerReceiver(currencyUpdateReceiver, intentFilter);
     }
 
     @Override
     public void onHide() {
         super.onHide();
         marketStat.unsubscribe(baseAsset, quoteAsset);
+        LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(currencyUpdateReceiver);
     }
 
     @Override
@@ -145,10 +143,17 @@ public class OrdersFragment extends BaseFragment
         }
     }
 
-    private void updateCurrency(){
-        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-        baseAsset = prefs.getString("currency_setting", "USD");
-        quoteAsset = "BTS";
+    private void updateCurrency() {
+        Context ctx = getContext();
+        if (ctx == null) {
+            return;
+        }
+
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(ctx);
+        String strAssetPair = prefs.getString("quotation_currency_pair", "BTS:USD");
+        String strAsset[] = strAssetPair.split(":");
+        baseAsset = strAsset[1];
+        quoteAsset = strAsset[0];
     }
 
     class OrderListAdapter extends RecyclerView.Adapter<OrderViewHolder>{
@@ -221,11 +226,14 @@ public class OrdersFragment extends BaseFragment
                 txtTargetCoin.setText(String.format("%.6f",sellAmount));
             }
 
-            txtPrice.setText(String.format("%.6f %s/%s", order.price,order.base.symbol,order.quote.symbol ));
-            txtSrcCoinName.setText(order.base.symbol);
-            txtTargetCoinName.setText(order.quote.symbol);
-
-
+            txtPrice.setText(String.format(Locale.ENGLISH,
+                    "%.6f %s/%s",
+                    order.price,
+                    utils.getAssetSymbolDisply(order.base.symbol),
+                    utils.getAssetSymbolDisply(order.quote.symbol)
+            ));
+            //txtSrcCoinName.setText(order.base.symbol);
+            //txtTargetCoinName.setText(order.quote.symbol);
 
             SimpleDateFormat formatter = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
             txtExpiration.setText(formatter.format(order.limitOrder.expiration));

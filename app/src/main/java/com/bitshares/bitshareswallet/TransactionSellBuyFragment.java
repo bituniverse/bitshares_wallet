@@ -1,5 +1,6 @@
 package com.bitshares.bitshareswallet;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.Editable;
+import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,20 +25,20 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bitshares.bitshareswallet.market.MarketStat;
+import com.bitshares.bitshareswallet.viewmodel.SellBuyViewModel;
 import com.bitshares.bitshareswallet.wallet.BitshareData;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
-
-import java.text.DecimalFormat;
-import com.bitshares.bitshareswallet.market.MarketStat;
 import com.bitshares.bitshareswallet.wallet.Broadcast;
 import com.bitshares.bitshareswallet.wallet.asset;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.asset_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.global_property_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.object_id;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.utils;
+import com.bituniverse.utils.NumericUtil;
 import com.kaopiz.kprogresshud.KProgressHUD;
 
-import java.text.NumberFormat;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
@@ -69,8 +71,6 @@ public class TransactionSellBuyFragment extends BaseFragment
     private String quoteAsset;
     private double lowestSellPrice = -1;
     private double higgestBuyPrice = -1;
-    private double balance = 0;
-    private Handler mHandler = new Handler();
     private OnFragmentInteractionListener mListener;
 
     private EditText qEditText;
@@ -91,6 +91,7 @@ public class TransactionSellBuyFragment extends BaseFragment
 
     private KProgressHUD mProcessHud;
 
+    private asset_object btsAssetObj;
     private asset_object baseAssetObj;
     private asset_object quoteAssetObj;
     private global_property_object globalPropertyObject;
@@ -120,84 +121,31 @@ public class TransactionSellBuyFragment extends BaseFragment
         }
     };
 
-    private void updateBalance(boolean forceRefresh){
-        if(getView()==null)
-            return;
-        if(forceRefresh){
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    int nRet = BitsharesWalletWraper.getInstance().build_connect();
-                    if (nRet == 0) {
-                        BitsharesWalletWraper.getInstance().prepare_data_to_display(true);
-                    }
-                    mHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateBalance(false);
-                        }
-                    });
-                }
-            }).start();
-            return;
-        }
-
-        BitshareData bitshareData = BitsharesWalletWraper.getInstance().getBitshareData();
-        if(bitshareData==null)
-            return;
-
-        List<asset> assetList = bitshareData.listBalances;
-        if(assetList!=null){
-            balance = 0;
-            Map<object_id<asset_object>, asset_object>  mapId2AssetObject = bitshareData.mapId2AssetObject;
-            for(asset as: assetList){
-                asset_object assetObject = mapId2AssetObject.get(as.asset_id);
-                asset_object.asset_object_legible assetObjectLegible = assetObject.get_legible_asset_object(as.amount);
-                double fResult = (double)assetObjectLegible.lDecimal / assetObjectLegible.scaled_precision + assetObjectLegible.lCount;
-
-                if(isBuy()){
-                    if(assetObjectLegible.symbol.equals(baseAsset)){
-                        balance = fResult;
-                        break;
-                    }
-                } else {
-                    if(assetObjectLegible.symbol.equals(quoteAsset)){
-                        balance = fResult;
-                        break;
-                    }
-                }
-            }
-            onBalanceUpdated();
-        }
-    }
-
-    private void onBalanceUpdated() {
-        DecimalFormat decimalFormat = new DecimalFormat("#.####");
-        balanceText.setText(decimalFormat.format(balance));
-    }
-
     @Override
     public void onMarketStatUpdate(MarketStat.Stat stat) {
-        if(getView()==null)
+        if (getView() == null || stat.orderBook == null) {
             return;
-        if(stat.orderBook!=null){
-            buyRecyclerViewAdapter.setList(stat.orderBook.bids.subList(0,maxOrderCount));
-            sellRecyclerViewAdapter.setList(stat.orderBook.asks.subList(0,maxOrderCount));
-
-            if(stat.orderBook.bids.size()>0){
-                higgestBuyPrice = stat.orderBook.bids.get(0).price;
-            } else {
-                higgestBuyPrice = -1;
-            }
-
-            if(stat.orderBook.asks.size()>0){
-                lowestSellPrice = stat.orderBook.asks.get(0).price;
-            } else {
-                lowestSellPrice = -1;
-            }
-
-            initPriceValue();
         }
+
+        if (stat.orderBook.bids != null && !stat.orderBook.bids.isEmpty()) {
+            int maxCount = Math.min(stat.orderBook.bids.size(), maxOrderCount);
+            buyRecyclerViewAdapter.setList(stat.orderBook.bids.subList(0, maxCount));
+
+            higgestBuyPrice = stat.orderBook.bids.get(0).price;
+        } else {
+            higgestBuyPrice = -1;
+        }
+
+        if (stat.orderBook.asks != null && !stat.orderBook.asks.isEmpty()) {
+            int maxCount = Math.min(stat.orderBook.asks.size(), maxOrderCount);
+            sellRecyclerViewAdapter.setList(stat.orderBook.asks.subList(0, maxCount));
+
+            lowestSellPrice = stat.orderBook.asks.get(0).price;
+        } else {
+            lowestSellPrice = -1;
+        }
+
+        initPriceValue();
     }
 
     public void initPriceValue() {
@@ -239,6 +187,22 @@ public class TransactionSellBuyFragment extends BaseFragment
         intentFilter.addAction(Broadcast.CURRENCY_UPDATED);
         LocalBroadcastManager.getInstance(getContext())
                 .registerReceiver(currencyUpdateReceiver, intentFilter);
+
+        SellBuyViewModel viewModel = ViewModelProviders.of(this).get(SellBuyViewModel.class);
+        if (isBuy()) {
+            viewModel.changeBalanceAsset(baseAsset);
+        } else {
+            viewModel.changeBalanceAsset(quoteAsset);
+        }
+
+        viewModel.getAvaliableBalance().observe(this, bitsharesAsset -> {
+            if (bitsharesAsset != null) {
+                DecimalFormat decimalFormat = new DecimalFormat("#.####");
+                balanceText.setText(decimalFormat.format((double) bitsharesAsset.amount / bitsharesAsset.precision));
+            } else {
+                balanceText.setText("0");
+            }
+        });
     }
 
     @Override
@@ -359,8 +323,8 @@ public class TransactionSellBuyFragment extends BaseFragment
                 confirmOrderData.setQuantity(qEditText.getText().toString());
                 confirmOrderData.setTotal(tEditText.getText().toString());
                 confirmOrderData.setFree(fEditText.getText().toString());
-                confirmOrderData.setQuantityType(quoteAsset);
-                confirmOrderData.setTotalType(baseAsset);
+                confirmOrderData.setQuantityType(utils.getAssetSymbolDisply(quoteAsset));
+                confirmOrderData.setTotalType(utils.getAssetSymbolDisply(baseAsset));
 
                 Calendar calendar = Calendar.getInstance();
                 calendar.set(Calendar.YEAR, calendar.get(Calendar.YEAR) + 5);
@@ -401,24 +365,16 @@ public class TransactionSellBuyFragment extends BaseFragment
     public void afterTextChanged(Editable s) {
         String qString = qEditText.getText().toString();
         String pString = pEditText.getText().toString();
-        if (qString.equals("") || pString.equals("")) {
-            tEditText.setText("");
+        if (TextUtils.isEmpty(qString) || TextUtils.isEmpty(pString)) {
             return;
         }
 
-        double qValue;
-        double pValue;
-
-        try {
-            qValue = Double.parseDouble(qString);
-            pValue = Double.parseDouble(pString);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
+        double qValue = NumericUtil.parseDouble(qString, -1.0D);
+        double pValue = NumericUtil.parseDouble(pString, -1.0D);
+        double total = qValue * pValue;
 
         DecimalFormat decimalFormat = new DecimalFormat("#.########");
-        tEditText.setText(decimalFormat.format(qValue * pValue));
+        tEditText.setText(decimalFormat.format(total));
 
         if (isBuy()) {
             double fee = calculateBuyFee(quoteAssetObj, baseAssetObj, pValue, qValue);
@@ -494,6 +450,7 @@ public class TransactionSellBuyFragment extends BaseFragment
             @Override
             public void run() {
                 try {
+                    btsAssetObj = BitsharesWalletWraper.getInstance().lookup_asset_symbols("BTS");
                     baseAssetObj = BitsharesWalletWraper.getInstance().lookup_asset_symbols(baseAsset);
                     quoteAssetObj = BitsharesWalletWraper.getInstance().lookup_asset_symbols(quoteAsset);
                     globalPropertyObject = BitsharesWalletWraper.getInstance().get_global_properties();
@@ -520,7 +477,6 @@ public class TransactionSellBuyFragment extends BaseFragment
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            updateBalance(true);
                             mProcessHud.dismiss();
                         }
                     });
@@ -575,27 +531,25 @@ public class TransactionSellBuyFragment extends BaseFragment
 
     private void updateCurency(){
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getContext());
-//        if(isBuy()){
-            quoteAsset = "BTS";
-            baseAsset = prefs.getString("currency_setting", "USD");
+        String strAssetPair = prefs.getString("quotation_currency_pair", "BTS:USD");
+        String strAsset[] = strAssetPair.split(":");
+        baseAsset = strAsset[1];
+        quoteAsset = strAsset[0];
 
-        pTextLastView.setText(baseAsset + "/" + quoteAsset);
-        qTextLastView.setText(quoteAsset);
-        tTextLastView.setText(baseAsset);
+        String baseAssetDisplay = utils.getAssetSymbolDisply(baseAsset);
+        String quoteAssetDisplay = utils.getAssetSymbolDisply(quoteAsset);
+        pTextLastView.setText(baseAssetDisplay + "/" + quoteAssetDisplay);
+        qTextLastView.setText(quoteAssetDisplay);
+        tTextLastView.setText(baseAssetDisplay);
         if (isBuy()) {
-            balanceTextBase.setText(baseAsset);
-            askTextBase.setText(baseAsset);
+            balanceTextBase.setText(baseAssetDisplay);
+            askTextBase.setText(baseAssetDisplay);
             askTextInfo.setText(getString(R.string.label_lowest_ask));
         } else {
-            balanceTextBase.setText(quoteAsset);
-            askTextBase.setText(quoteAsset);
+            balanceTextBase.setText(quoteAssetDisplay);
+            askTextBase.setText(quoteAssetDisplay);
             askTextInfo.setText(getString(R.string.label_highest_bid));
         }
-//        } else {
-//            baseAsset = "BTS";
-//            quoteAsset = prefs.getString("currency_setting", "USD");
-//        }
-        updateBalance(false);
     }
 
     private boolean isBuy(){
@@ -609,7 +563,9 @@ public class TransactionSellBuyFragment extends BaseFragment
         }
         asset a = BitsharesWalletWraper.getInstance().calculate_sell_fee(symbolToSell, symbolToReceive,
                 rate, amount, globalPropertyObject);
-        if (a.asset_id.equals(baseAssetObj.id)) {
+        if (a.asset_id.equals(btsAssetObj.id)) {
+            return utils.get_asset_amount(a.amount, btsAssetObj);
+        } else if (a.asset_id.equals(baseAssetObj.id)) {
             return utils.get_asset_amount(a.amount, baseAssetObj);
         } else {
             return utils.get_asset_amount(a.amount, quoteAssetObj);
@@ -623,7 +579,9 @@ public class TransactionSellBuyFragment extends BaseFragment
         }
         asset a = BitsharesWalletWraper.getInstance().calculate_buy_fee(symbolToReceive, symbolToSell,
                 rate, amount, globalPropertyObject);
-        if (a.asset_id.equals(baseAssetObj.id)) {
+        if (a.asset_id.equals(btsAssetObj.id)) {
+            return utils.get_asset_amount(a.amount, btsAssetObj);
+        } else if (a.asset_id.equals(baseAssetObj.id)) {
             return utils.get_asset_amount(a.amount, baseAssetObj);
         } else {
             return utils.get_asset_amount(a.amount, quoteAssetObj);

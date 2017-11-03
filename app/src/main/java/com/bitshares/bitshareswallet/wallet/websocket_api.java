@@ -1,6 +1,5 @@
 package com.bitshares.bitshareswallet.wallet;
 
-import android.content.SharedPreferences;
 import android.text.TextUtils;
 
 import com.bitshares.bitshareswallet.market.MarketTicker;
@@ -16,20 +15,33 @@ import com.bitshares.bitshareswallet.wallet.graphene.chain.global_property_objec
 import com.bitshares.bitshareswallet.wallet.graphene.chain.limit_order_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.object_id;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.operation_history_object;
+import com.bitshares.bitshareswallet.wallet.graphene.chain.operations;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.signed_transaction;
+import com.google.common.collect.Sets;
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import okhttp3.OkHttpClient;
@@ -42,6 +54,12 @@ import okio.ByteString;
 import static com.bitshares.bitshareswallet.wallet.common.ErrorCode.*;
 
 public class websocket_api extends WebSocketListener {
+    interface BitsharesNoticeListener {
+        void onNoticeMessage(BitsharesNoticeMessage message);
+        void onDisconnect();
+    }
+
+
     private int _nDatabaseId = -1;
     private int _nHistoryId = -1;
     private int _nBroadcastId = -1;
@@ -55,8 +73,58 @@ public class websocket_api extends WebSocketListener {
     private static int WEBSOCKET_ALL_READY = 0;
     private static int WEBSOCKET_CONNECT_FAIL = 1;
 
+    private static int METHOD_CALL = 0;
+    private static int METHOD_NOTICE = 1;
+
     private AtomicInteger mnCallId = new AtomicInteger(1);
-    private HashMap<Integer, IReplyObjectProcess> mHashMapIdToProcess = new HashMap<>();
+    private Map<Integer, IReplyObjectProcess> mHashMapIdToProcess = new ConcurrentHashMap<>();
+
+    private BitsharesNoticeListener mListener;
+
+    private Set<Integer> msetMarketSubscription;
+    private Set<Integer> msetSubscriptionCallback;
+
+    private ExecutorService mExecutorService;
+
+    class BitsharesNoticeMessageDeserializer implements JsonDeserializer<BitsharesNoticeMessage>  {
+
+        @Override
+        public BitsharesNoticeMessage deserialize(JsonElement json,
+                                                  Type typeOfT,
+                                                  JsonDeserializationContext context) throws JsonParseException {
+            JsonObject jsonObject = json.getAsJsonObject();
+            JsonArray jsonArrayParams = jsonObject.get("params").getAsJsonArray();
+
+            BitsharesNoticeMessage bitsharesNoticeMessage = new BitsharesNoticeMessage();
+            int nSubscripitonid = jsonArrayParams.get(0).getAsInt();
+            if (msetMarketSubscription.contains(nSubscripitonid)) {
+                bitsharesNoticeMessage.nSubscriptionId = nSubscripitonid;
+                JsonArray jsonArray = jsonArrayParams.get(1).getAsJsonArray().get(0).getAsJsonArray();
+                if (jsonArray.get(0).isJsonArray() && jsonArray.get(0).getAsJsonArray().get(0).isJsonArray()) {
+                    JsonElement jsonElement = jsonArray.get(0);
+                    bitsharesNoticeMessage.listFillOrder = context.deserialize(
+                            jsonElement,
+                            new TypeToken<List<operations.operation_type>>(){}.getType()
+                    );
+                } else if (jsonArray.get(0).isJsonObject()){
+                    JsonElement jsonElement = jsonArrayParams.get(1).getAsJsonArray().get(0);
+                    bitsharesNoticeMessage.listOrderObject = context.deserialize(
+                            jsonElement,
+                            new TypeToken<List<limit_order_object>>(){}.getType()
+                    );
+                } else {
+
+                }
+            } else if (msetSubscriptionCallback.contains(nSubscripitonid)) {
+                bitsharesNoticeMessage.nSubscriptionId = nSubscripitonid;
+                bitsharesNoticeMessage.bAccountChanged = true;
+            }
+
+            return bitsharesNoticeMessage;
+        }
+    }
+
+
 
     /*
      WS_NODE_LIST: [
@@ -76,19 +144,16 @@ public class websocket_api extends WebSocketListener {
         {url: "wss://node.testnet.bitshares.eu", location: "Public Testnet Server (Frankfurt, Germany)"}
          */
 
-    private List<String> mListNode = Arrays.asList(
-            "wss://bitshares.openledger.info/ws",
-            "wss://eu.openledger.info/ws",
-            "wss://bit.btsabc.org/ws",
-            "wss://bts.transwiser.com/ws",
-            "wss://bitshares.dacplay.org/ws",
-            "wss://bitshares-api.wancloud.io/ws",
-            "wss://openledger.hk/ws",
-            "wss://secure.freedomledger.com/ws",
-            "wss://dexnode.net/ws",
-            "wss://altcap.io/ws",
-            "wss://bitshares.crypto.fans/ws"
-    );
+    public websocket_api(BitsharesNoticeListener listener) {
+        msetMarketSubscription = Sets.newConcurrentHashSet();
+        msetSubscriptionCallback = Sets.newConcurrentHashSet();
+
+        global_config_object.getInstance().getGsonBuilder().registerTypeAdapter(
+                BitsharesNoticeMessage.class,
+                new BitsharesNoticeMessageDeserializer()
+        );
+        mListener = listener;
+    }
 
     class WebsocketError {
         int code;
@@ -113,6 +178,7 @@ public class websocket_api extends WebSocketListener {
         int id;
         String jsonrpc;
     }
+
 
     private interface IReplyObjectProcess<T> {
         void processTextToObject(String strText);
@@ -216,6 +282,9 @@ public class websocket_api extends WebSocketListener {
                 }
                 mHashMapIdToProcess.clear();
             }
+            if (mListener != null) {
+                mListener.onDisconnect();
+            }
         }
     }
 
@@ -224,22 +293,44 @@ public class websocket_api extends WebSocketListener {
         //super.onMessage(webSocket, text);
 
         try {
-            Gson gson = new Gson();
-            ReplyBase replyObjectBase = gson.fromJson(text, ReplyBase.class);
-
-            IReplyObjectProcess iReplyObjectProcess = null;
-            synchronized (mHashMapIdToProcess) {
-                if (mHashMapIdToProcess.containsKey(replyObjectBase.id)) {
-                    iReplyObjectProcess = mHashMapIdToProcess.get(replyObjectBase.id);
-                }
+            int nMethod = 0;
+            JSONObject jsonObject = new JSONObject(text);
+            if (jsonObject.has("method")) {
+                nMethod = METHOD_NOTICE;
             }
 
-            if (iReplyObjectProcess != null) {
-                iReplyObjectProcess.processTextToObject(text);
-            } else {
+            if (nMethod == METHOD_CALL) {
+                Gson gson = new Gson();
+                ReplyBase replyObjectBase = gson.fromJson(text, ReplyBase.class);
 
+                IReplyObjectProcess iReplyObjectProcess = null;
+                synchronized (mHashMapIdToProcess) {
+                    if (mHashMapIdToProcess.containsKey(replyObjectBase.id)) {
+                        iReplyObjectProcess = mHashMapIdToProcess.get(replyObjectBase.id);
+                    }
+                }
+
+                if (iReplyObjectProcess != null) {
+                    iReplyObjectProcess.processTextToObject(text);
+                } else {
+
+                }
+            } else {
+                // process notice
+                Gson gson = global_config_object.getInstance().getGsonBuilder().create();
+                final BitsharesNoticeMessage bitsharesNoticeMessage = gson.fromJson(text, BitsharesNoticeMessage.class);
+
+                mExecutorService.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        // 将数据回调
+                        mListener.onNoticeMessage(bitsharesNoticeMessage);
+                    }
+                });
             }
         } catch (JsonSyntaxException e) {
+            e.printStackTrace();
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
@@ -303,6 +394,8 @@ public class websocket_api extends WebSocketListener {
             mnConnectStatus = WEBSOCKET_ALL_READY;
         }
 
+        mExecutorService = Executors.newSingleThreadExecutor();
+
         return nRet;
     }
 
@@ -324,6 +417,8 @@ public class websocket_api extends WebSocketListener {
         _nDatabaseId = -1;
         _nBroadcastId = -1;
         _nHistoryId = -1;
+
+        mExecutorService.shutdown();
 
         return 0;
     }
@@ -468,7 +563,9 @@ public class websocket_api extends WebSocketListener {
         return replyLookupAccountNames.result;
     }
 
-    public List<operation_history_object> get_account_history(object_id<account_object> accountId, int nLimit) throws NetworkStatusException {
+    public List<operation_history_object> get_account_history(object_id<account_object> accountId,
+                                                              object_id<operation_history_object> startId,
+                                                              int nLimit) throws NetworkStatusException {
         Call callObject = new Call();
         callObject.id = mnCallId.getAndIncrement();
         callObject.method = "call";
@@ -478,7 +575,7 @@ public class websocket_api extends WebSocketListener {
 
         List<Object> listAccountHistoryParam = new ArrayList<>();
         listAccountHistoryParam.add(accountId);
-        listAccountHistoryParam.add("1.11.0");
+        listAccountHistoryParam.add(startId);
         listAccountHistoryParam.add(nLimit);
         listAccountHistoryParam.add("1.11.0");
         callObject.params.add(listAccountHistoryParam);
@@ -626,7 +723,7 @@ public class websocket_api extends WebSocketListener {
                 new ReplyObjectProcess<>(new TypeToken<Reply<Integer>>(){}.getType());
         Reply<Object> replyObject = sendForReply(callObject, replyObjectProcess);
         if (replyObject.error != null) {
-            return -1;
+            throw new NetworkStatusException(replyObject.error.message);
         } else {
             return 0;
         }
@@ -698,9 +795,33 @@ public class websocket_api extends WebSocketListener {
         listParams.add(quote);
         callObject.params.add(listParams);
 
-        ReplyObjectProcess<Reply<String>> replyObject =
+        ReplyObjectProcess<Reply<Object>> replyObject =
                 new ReplyObjectProcess<>(new TypeToken<Reply<String>>(){}.getType());
-        sendForReplyImpl(callObject, replyObject);
+        Reply<Object> reply = sendForReplyImpl(callObject, replyObject);
+
+        msetMarketSubscription.add(callObject.id);
+
+        return;
+    }
+
+    public void set_subscribe_callback() throws NetworkStatusException {
+        Call callObject = new Call();
+        callObject.id = mnCallId.getAndIncrement();
+        callObject.method = "call";
+        callObject.params = new ArrayList<>();
+        callObject.params.add(_nDatabaseId);
+        callObject.params.add("set_subscribe_callback");
+
+        List<Object> listParams = new ArrayList<>();
+        listParams.add(callObject.id);
+        listParams.add(false);
+        callObject.params.add(listParams);
+
+        ReplyObjectProcess<Reply<Object>> replyObject =
+                new ReplyObjectProcess<>(new TypeToken<Reply<String>>(){}.getType());
+        Reply<Object> reply = sendForReplyImpl(callObject, replyObject);
+
+        msetSubscriptionCallback.add(callObject.id);
     }
 
     public MarketTicker get_ticker(String base, String quote) throws NetworkStatusException {
@@ -761,11 +882,16 @@ public class websocket_api extends WebSocketListener {
         listParams.add(subscribe);
         callObject.params.add(listParams);
 
-        ReplyObjectProcess<Reply<List<full_account_object>>> replyObject =
-                new ReplyObjectProcess<>(new TypeToken<Reply<List<full_account_object>>>(){}.getType());
-        Reply<List<full_account_object>> reply = sendForReply(callObject, replyObject);
+        ReplyObjectProcess<Reply<List<full_account_object_reply>>> replyObject =
+                new ReplyObjectProcess<>(new TypeToken<Reply<List<full_account_object_reply>>>(){}.getType());
+        Reply<List<full_account_object_reply>> reply = sendForReply(callObject, replyObject);
 
-        return reply.result;
+        List<full_account_object> fullAccountObjectList = new ArrayList<>();
+        for (full_account_object_reply fullAccountObjectReply : reply.result) {
+            fullAccountObjectList.add(fullAccountObjectReply.fullAccountObject);
+        }
+
+        return fullAccountObjectList;
     }
 
     public List<limit_order_object> get_limit_orders(List<object_id<limit_order_object>> ids)
@@ -793,6 +919,24 @@ public class websocket_api extends WebSocketListener {
         return get_limit_orders(Collections.singletonList(id)).get(0);
     }
 
+    public List<Integer> get_market_history_buckets() throws NetworkStatusException {
+        Call callObject = new Call();
+        callObject.id = mnCallId.getAndIncrement();
+        callObject.method = "call";
+        callObject.params = new ArrayList<>();
+        callObject.params.add(_nHistoryId);
+        callObject.params.add("get_market_history_buckets");
+
+        List<Object> listParams = new ArrayList<>();
+        callObject.params.add(listParams);
+
+        ReplyObjectProcess<Reply<List<Integer>>> replyObject =
+                new ReplyObjectProcess<>(new TypeToken<Reply<List<Integer>>>(){}.getType());
+        Reply<List<Integer>> reply = sendForReply(callObject, replyObject);
+
+        return reply.result;
+    }
+
     private <T> Reply<T> sendForReply(Call callObject,
                                ReplyObjectProcess<Reply<T>> replyObjectProcess) throws NetworkStatusException {
         if (mWebsocket == null || mnConnectStatus != WEBSOCKET_CONNECT_SUCCESS) {
@@ -815,8 +959,8 @@ public class websocket_api extends WebSocketListener {
         }
 
         synchronized (replyObjectProcess) {
-            boolean bRet = mWebsocket.send(strMessage);
-            if (bRet == false) {
+            boolean bRet = mWebsocket != null && mWebsocket.send(strMessage);
+            if (!bRet) {
                 throw new NetworkStatusException("Failed to send message to server.");
             }
 

@@ -7,6 +7,10 @@ import org.spongycastle.crypto.digests.SHA512Digest;
 
 import java.util.Arrays;
 
+/**
+ * Created by lorne on 08/09/2017.
+ */
+
 public class sha224_object {
     public byte[] hash = new byte[28];
 

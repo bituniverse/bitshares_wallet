@@ -2,6 +2,11 @@ package com.bitshares.bitshareswallet.wallet.graphene.chain;
 
 import com.bitshares.bitshareswallet.wallet.account_object;
 import com.bitshares.bitshareswallet.wallet.asset;
+import com.bituniverse.utils.NumericUtil;
+
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 public class asset_object {
     public class asset_object_legible {
@@ -75,31 +80,27 @@ public class asset_object {
 
     public asset amount_from_string(String strAmount) {
         //strAmount.matches();
-        // // TODO: 07/09/2017 需要正则表达处理
+        // TODO: 07/09/2017 需要正则表达处理
 
+        long precisionScaled = 1;
+        String strDecimalFormat = "0";
 
-        long lCount = 0;
-        long lDecimal = 0;
-        Long scaled_precision = get_scaled_precision();
-
-        int nIndex = strAmount.indexOf('.');
-        if (nIndex == -1) {
-            lCount = Long.valueOf(strAmount);
-        } else {
-            lCount = Long.valueOf(strAmount.substring(0, nIndex));
-
-            int nDecMaxLen = scaled_precision.toString().substring(1).length();
-
-            String strDecimal = strAmount.substring(nIndex + 1);
-            for (int i = strDecimal.length(); i < nDecMaxLen; ++i) {
-                strDecimal += "0";
+        if (precision > 0) {
+            strDecimalFormat = strDecimalFormat.concat(".");
+            for (int i = 0; i < precision; ++i) {
+                precisionScaled *= 10;
+                strDecimalFormat = strDecimalFormat.concat("0");
             }
-
-            lDecimal = Long.valueOf(strDecimal);
         }
 
-        asset assetObject = new asset(lCount * scaled_precision + lDecimal, id);
+        // 精度截取
+        DecimalFormat decimalFormat = new DecimalFormat(strDecimalFormat, new DecimalFormatSymbols(Locale.ENGLISH));
+        String strFormatAmount = decimalFormat.format(NumericUtil.parseDouble(strAmount));
 
+        double result = NumericUtil.parseDouble(strFormatAmount);
+        long resultAmount = (long) (result * precisionScaled);
+
+        asset assetObject = new asset(resultAmount, id);
         return assetObject;
     }
 

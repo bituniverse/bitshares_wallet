@@ -1,0 +1,168 @@
+<resources>
+    <string name="app_name_full">Bitshares Кошелек</string>
+    <string name="app_name">BTS Кошелек</string>
+
+    <!--侧边栏-->
+    <string name="navigation_drawer_open">Открыть панель навигации</string>
+    <string name="navigation_drawer_close">Закрыть панель навигации</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Привет пустой фрагмент</string>
+
+    <string name="title_activity_sign_up_button">Кнопка регистрации</string>
+    <string name="sign_up_button">Зарегистрироваться</string>
+    <string name="dummy_content">BitShares Кошелек</string>
+
+    <string name="splash_page_message">Безопасный способ хранения и торговли</string>
+
+    <string name="about_activity_title">О приложении</string>
+    <string name="settings_activity_title">Настройки</string>
+    <string name="import_activity_title">Импорт ключа</string>
+    <string name="model_select_activity_title">Авторизация</string>
+
+    <string name="operation_history_year">%d год назад</string>
+    <string name="operation_history_years">%d лет назад</string>
+
+    <string name="operation_history_month">%d месяц назад</string>
+    <string name="operation_history_months">%d месяца назад</string>
+
+    <string name="operation_history_weeks">%d недель назад</string>
+    <string name="operation_history_week">%d неделю назад</string>
+
+    <string name="operation_history_day">%d день назад</string>
+    <string name="operation_history_days">%d дней назад</string>
+
+    <string name="operation_history_hours">%d часов назад</string>
+    <string name="operation_history_hour">%d час назад</string>
+
+    <string name="operation_history_minte">%d минуту назад</string>
+    <string name="operation_history_mintes">%d минут назад</string>
+
+    <string name="operation_history_seconds">%d секунд назад</string>
+    <string name="operation_history_second">%d секунду назад</string>
+
+    <string name="main_activity_loading">Загрузка…</string>
+
+    <string name="import_activity_unknown_error">Произошла какая-то ошибка.</string>
+    <string name="import_activity_private_key_invalid">Неверный закрытый ключ.</string>
+    <string name="import_activity_account_invalid">Такого аккаунта не существует.</string>
+    <string name="import_activity_account_not_match_key">Имя аккаунта и закрытый ключ не подходят.</string>
+    <string name="import_activity_account_name_invalid">Имя аккаунта не найдено.</string>
+    <string name="import_activity_connect_failed">Ошибка подключения к серверу.</string>
+    <string name="import_activity_file_failed">Нельзя прочитать содержимое файла.</string>
+    <string name="import_activity_password_invalid">Неверный пароль.</string>
+    <string name="import_activity_file_bin_password_invalid">Неверный файл кошелька или пароль.</string>
+
+    <string name="password_confirm_title">Пожалуйста, напишите пароль для подтверждения транзакции:</string>
+    <string name="password_confirm_button_confirm">ПОДТВЕРДИТЬ</string>
+    <string name="password_confirm_button_cancel">ОТМЕНА</string>
+    <string name="password_invalid">Неверный пароль.</string>
+
+    <string name="connect_fail_message">Ошибка подключения к интернету. \nПожалуйста повторите после подключения к WIFI или сотовой сети.</string>
+    <string name="connect_fail_dialog_retry">Повторить</string>
+
+    <string name="log_out_dialog_message">Вы уверены, что хотите выйти?</string>
+    <string name="log_out_dialog_confirm_button">ВЫХОД</string>
+    <string name="log_out_dialog_cancel_button">ОТМЕНА</string>
+
+    <string name="import_activity_wallet_model">Модель Кошелька</string>
+    <string name="import_activity_account_model">Модель Аккаунта</string>
+    <string name="title_activity_settings">Настройки</string>
+
+    <string name="about_activity_text">Если вам понравилась наше приложение, мы будем рады получить пожертвование.</string>
+    <string name="about_activity_version">Версия</string>
+    <string name="about_activity_button">ПОЖЕРТВОВАТЬ</string>
+
+    <string name="send_account_to_hint">Напишите имя аккаунта</string>
+    <string name="send_memo_hint">По желанию</string>
+
+    <string name="transaction_memo_hint">Нажмите, чтобы разблокировать заметку</string>
+    <string name="transaction_unlock_memo_dialog_message">Введите пароль для разблокировки:</string>
+
+    <string name="title_wallet">Кошелек</string>
+    <string name="title_quotation">Котировки</string>
+    <string name="title_exchange">Биржа</string>
+    <string name="title_buy">Купить</string>
+    <string name="title_sell">Продать</string>
+    <string name="title_my_orders">Ордера</string>
+
+    <string name="label_latest">Последние:</string>
+    <string name="label_high">Макс:</string>
+    <string name="label_low">Мин:</string>
+    <string name="label_volume">Кол:</string>
+    <string name="label_hour_24">24ч</string>
+    <string name="label_price">Цена:</string>
+    <string name="label_quantity">Количество:</string>
+    <string name="label_total">Всего:</string>
+    <string name="label_fee">Комиссия:</string>
+    <string name="label_balance">Баланс:</string>
+    <string name="label_lowest_ask">Лучший запрос:</string>
+    <string name="label_highest_bid">Лучшее предложение:</string>
+
+    <string name="label_reset">СБРОС</string>
+    <string name="label_buy">КУПИТЬ</string>
+    <string name="label_sell">ПРОДАТЬ</string>
+    <string name="label_buy_order">ОРДЕР ПОКУПКИ</string>
+    <string name="label_sell_order">ОРДЕР ПРОДАЖИ</string>
+    <string name="label_operation">Операции:</string>
+    <string name="label_expiration">Истечение:</string>
+    <string name="label_no_open_orders">У вас нет открытых ордеров</string>
+    <string name="label_cancel_order">ОТМЕНИТЬ ОРДЕР</string>
+
+    <string name="label_please_confirm">Пожалуйста подтвердите</string>
+    <string name="label_type_password">Напишите пароль для обмена</string>
+    <string name="label_ok">ДА</string>
+    <string name="label_no">НЕТ</string>
+    <string name="text_price">Цена</string>
+    <string name="label_confirm_cancel_order">Вы уверены, что хотите отменить этот ордер?</string>
+
+    <string name="menu_logout">Выход</string>
+    <string name="import_account_name">Имя аккаунта:</string>
+    <string name="import_password">Пароль:</string>
+    <string name="label_memo">Заметка:</string>
+    <string name="label_from">от:</string>
+    <string name="label_to">к:</string>
+
+    <string name="tab_send">Отправить</string>
+    <string name="tab_balances">Баланс</string>
+    <string name="tab_transactions">Транзакция</string>
+    <string name="title_currency_settings">Настройки валюты</string>
+    <string name="title_full_node_api_server_select">Выбор API-сервера</string>
+    <string name="title_select_currency">Выберите пару</string>
+    <string name="title_select_api_server">Выберите API-сервер</string>
+
+    <string name="label_file_path">Путь к файлу:</string>
+    <string name="label_select_file">Выбор файла</string>
+    <string name="label_private_key">Закрытый ключ:</string>
+
+    <string name="label_bts_cny">bitCNY/BTS</string>
+    <string name="label_bts">BTS</string>
+    <string name="label_cny">bitCNY</string>
+
+    <string name="create_account_activity_title">Зарегистрироваться</string>
+    <string name="create_account_password_confirm">Подтвердите пароль:</string>
+    <string name="create_account_activity_button">ЗАРЕГИСТРИРОВАТЬСЯ</string>
+    <string name="create_account_activity_network_fail">Ошибка подключения к серверу</string>
+    <string name="create_account_activity_account_object_exist">Аккаунт уже существует</string>
+    <string name="create_account_activity_response_fail">Сервер не отвечает</string>
+    <string name="create_account_activity_create_fail">Не удалось зарегистрироваться</string>
+
+    <string name="create_account_account_name_error_full_letter">Имя аккаунта не может содержать только буквы</string>
+    <string name="create_account_account_name_too_short">Имя аккаунта слишком короткое</string>
+    <string name="create_account_account_name_error_start_letter">Имя аккаунта должно начинаться с буквы</string>
+    <string name="create_account_check_box">Я подтверждаю, что сделал резервную копию своего пароля (пароль является единственным подтверждением владения, вы потеряете все средства, если забудите его)</string>
+    <string name="create_account_password_requirement">Пароль должен включать больше чем 12 символов с минимум 1 заглавной буквой и 1 цифрой</string>
+    <string name="create_account_password_confirm_error">Пароли не совпадают</string>
+
+    <string name="create_account_account_name_empty">Пустое имя аккаунта</string>
+    <string name="create_account_password_empty">Пустой пароль</string>
+    <string name="create_account_password_confirm_empty">Пустое подтверждение пароля</string>
+    <string name="create_account_check_box_confirm">Вы должны подтвердить содержимое, установив флажок.</string>
+
+
+    <string name="quotation_cureency_select_title">Котировка выбранной валюты</string>
+    <string name="quotation_cureency_select_dialog_title">Выбор текущей пары</string>
+
+    <string name="trade_fragment_quantity">Количество</string>
+
+</resources>

@@ -7,6 +7,7 @@ import com.bitshares.bitshareswallet.wallet.common.unsigned_number_deserializer;
 import com.bitshares.bitshareswallet.wallet.common.unsigned_number_serializer;
 import com.bitshares.bitshareswallet.wallet.fc.crypto.ripemd160_object;
 import com.bitshares.bitshareswallet.wallet.fc.crypto.sha256_object;
+import com.bitshares.bitshareswallet.wallet.full_account_object_reply;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
 import com.google.gson.GsonBuilder;
@@ -36,6 +37,7 @@ public class global_config_object {
         mGsonBuilder.registerTypeAdapter(UnsignedLong.class, new unsigned_number_deserializer.UnsignedLongDeserialize());
         mGsonBuilder.registerTypeAdapter(Date.class, new gson_common_deserializer.DateDeserializer());
         mGsonBuilder.registerTypeAdapter(ByteBuffer.class, new gson_common_deserializer.ByteBufferDeserializer());
+        mGsonBuilder.registerTypeAdapter(full_account_object_reply.class, new full_account_object_reply.full_account_object_reply_deserializer());
         //mGsonBuilder.setDateFormat("yyyy-MM-dd'T'HH:mm:ss");
 
         // register serializer

@@ -1,6 +1,7 @@
 package com.bitshares.bitshareswallet;
 
 import android.app.Activity;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.net.Uri;
@@ -11,6 +12,7 @@ import android.support.v7.app.AlertDialog;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.text.TextWatcher;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,19 +25,33 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bitshares.bitshareswallet.room.BitsharesAssetObject;
+import com.bitshares.bitshareswallet.room.BitsharesBalanceAsset;
+import com.bitshares.bitshareswallet.viewmodel.SendViewModel;
 import com.bitshares.bitshareswallet.wallet.BitshareData;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.account_object;
 import com.bitshares.bitshareswallet.wallet.asset;
+import com.bitshares.bitshareswallet.wallet.common.ErrorCode;
+import com.bitshares.bitshareswallet.wallet.exception.ErrorCodeException;
 import com.bitshares.bitshareswallet.wallet.exception.NetworkStatusException;
 import com.bitshares.bitshareswallet.wallet.fc.crypto.sha256_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.asset_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.signed_transaction;
+import com.bituniverse.utils.NumericUtil;
 import com.kaopiz.kprogresshud.KProgressHUD;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import io.reactivex.Flowable;
+import io.reactivex.Scheduler;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.exceptions.Exceptions;
+import io.reactivex.schedulers.Schedulers;
 
 
 /**
@@ -60,10 +76,10 @@ public class SendFragment extends BaseFragment {
 
     private OnFragmentInteractionListener mListener;
 
-    private EditText mEditTextTo;
-    private TextView mTextViewId;
+    @BindView(R.id.editTextTo) EditText mEditTextTo;
+    @BindView(R.id.textViewToId) TextView mTextViewId;
 
-    private EditText mEditTextQuantitiy;
+    @BindView(R.id.editTextQuantity) EditText mEditTextQuantitiy;
 
     private View mView;
     private Handler mHandler = new Handler();
@@ -104,6 +120,8 @@ public class SendFragment extends BaseFragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         mView = inflater.inflate(R.layout.fragment_send, container, false);
+        ButterKnife.bind(this, mView);
+
         EditText editTextFrom = (EditText)mView.findViewById(R.id.editTextFrom);
 
         String strName = BitsharesWalletWraper.getInstance().get_account().name;
@@ -136,8 +154,6 @@ public class SendFragment extends BaseFragment {
             }
         });
 
-        mEditTextTo = (EditText)mView.findViewById(R.id.editTextTo);
-        mTextViewId = (TextView)mView.findViewById(R.id.textViewToId);
         mEditTextTo.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
@@ -169,17 +185,47 @@ public class SendFragment extends BaseFragment {
         });
 
 
-        mEditTextQuantitiy = (EditText)mView.findViewById(R.id.editTextQuantity) ;
         mEditTextQuantitiy.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
-                if (hasFocus == false) {
-                    processCalculateFee();
+                if (hasFocus) {
+                    return;
                 }
+
+                String strQuantity = mEditTextQuantitiy.getText().toString();
+                if (TextUtils.isEmpty(strQuantity)) {
+                    return;
+                }
+
+                double quantity = NumericUtil.parseDouble(strQuantity, -1.0D);
+                if (Double.compare(quantity, 0.0D) < 0) {   // 越界或者格式错误
+                    mEditTextQuantitiy.setText("0");
+                    // TODO toast
+                    return;
+                }
+
+                processCalculateFee();
             }
         });
 
         mSpinner = (Spinner) mView.findViewById(R.id.spinner_unit);
+
+        SendViewModel viewModel = ViewModelProviders.of(this).get(SendViewModel.class);
+        viewModel.getBalancesList().observe(this, bitsharesBalanceAssetList -> {
+            List<String> symbolList = new ArrayList<>();
+            for (BitsharesBalanceAsset bitsharesBalanceAsset : bitsharesBalanceAssetList) {
+                symbolList.add(bitsharesBalanceAsset.quote);
+
+                ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
+                        getActivity(),
+                        android.R.layout.simple_spinner_item,
+                        symbolList
+                );
+
+                arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                mSpinner.setAdapter(arrayAdapter);
+            }
+        });
 
         return mView;
     }
@@ -197,8 +243,8 @@ public class SendFragment extends BaseFragment {
         if (context instanceof OnFragmentInteractionListener) {
             mListener = (OnFragmentInteractionListener) context;
         } else {
-            /*throw new RuntimeException(context.toString()
-                    + " must implement OnFragmentInteractionListener");*/
+            throw new RuntimeException(context.toString()
+                    + " must implement OnFragmentInteractionListener");
         }
     }
 
@@ -229,42 +275,39 @@ public class SendFragment extends BaseFragment {
                                  final String strSymbol,
                                  final String strMemo) {
         mProcessHud.show();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                signed_transaction signedTransaction = null;
-                try {
-                    signedTransaction = BitsharesWalletWraper.getInstance().transfer(
+        Flowable.just(0)
+                .subscribeOn(Schedulers.io())
+                .map(integer -> {
+                    signed_transaction signedTransaction = BitsharesWalletWraper.getInstance().transfer(
                             strFrom,
                             strTo,
                             strQuantity,
                             strSymbol,
                             strMemo
                     );
-                } catch (NetworkStatusException e) {
-                    e.printStackTrace();
-                }
-
-                if (signedTransaction != null) {
-                    mListener.notifyTransferComplete(signedTransaction);
-                }
-
-                final signed_transaction finalSignedTransaction = signedTransaction;
-                mHandler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (getActivity() != null && getActivity().isFinishing() == false) {
-                            mProcessHud.dismiss();
-                            if (finalSignedTransaction != null) {
-                                Toast.makeText(getActivity(), "Sent Successfully", Toast.LENGTH_LONG).show();
-                            } else {
-                                Toast.makeText(getActivity(), "Fail to send", Toast.LENGTH_LONG).show();
-                            }
+                    return signedTransaction;
+                }).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(signedTransaction -> {
+                    if (getActivity() != null && getActivity().isFinishing() == false) {
+                        mProcessHud.dismiss();
+                        if (signedTransaction != null) {
+                            Toast.makeText(getActivity(), "Sent Successfully", Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(getActivity(), "Fail to send", Toast.LENGTH_LONG).show();
                         }
                     }
+
+                }, throwable -> {
+                    if (throwable instanceof NetworkStatusException) {
+                        throwable.printStackTrace();
+                        if (getActivity() != null && getActivity().isFinishing() == false) {
+                            mProcessHud.dismiss();
+                            Toast.makeText(getActivity(), throwable.getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    } else {
+                        throw Exceptions.propagate(throwable);
+                    }
                 });
-            }
-        }).start();
     }
 
     private void processSendClick(final View view) {
@@ -294,7 +337,6 @@ public class SendFragment extends BaseFragment {
                 public void onClick(View v) {
                     EditText editText = (EditText) viewGroup.findViewById(R.id.editTextPassword);
                     String strPassword = editText.getText().toString();
-                    //strPassword = "yIe25_WQ1_qw3";
                     int nRet = BitsharesWalletWraper.getInstance().unlock(strPassword);
                     if (nRet == 0) {
                         dialog.dismiss();
@@ -322,40 +364,29 @@ public class SendFragment extends BaseFragment {
     }
 
     private void processGetTransferToId(final String strAccount, final TextView textViewTo) {
-        // 失去焦点，检测该号的id
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                account_object accountObject = null;
-                try {
-                    accountObject = BitsharesWalletWraper.getInstance().get_account_object(strAccount);
-                    if (accountObject != null) {
-                        final account_object finalAccountObject = accountObject;
-
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (getActivity() != null && getActivity().isFinishing() == false) {
-                                    textViewTo.setText("#" + finalAccountObject.id.get_instance());
-                                }
-                            }
-                        });
-
-                    } else {
-                        mHandler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                if (getActivity() != null && getActivity().isFinishing() == false) {
-                                    textViewTo.setText("#none");
-                                }
-                            }
-                        });
+        Flowable.just(strAccount)
+                .subscribeOn(Schedulers.io())
+                .map(accountName -> {
+                    account_object accountObject = BitsharesWalletWraper.getInstance().get_account_object(accountName);
+                    if (accountObject == null) {
+                        throw new ErrorCodeException(ErrorCode.ERROR_NO_ACCOUNT_OBJECT, "it can't find the account");
                     }
-                } catch (NetworkStatusException e) {
-                    e.printStackTrace();
-                }
-            }
-        }).start();
+
+                    return accountObject;
+                }).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(accountObject -> {
+                    if (getActivity() != null && getActivity().isFinishing() == false) {
+                        textViewTo.setText("#" + accountObject.id.get_instance());
+                    }
+                }, throwable -> {
+                    if (throwable instanceof NetworkStatusException || throwable instanceof ErrorCodeException) {
+                        if (getActivity() != null && getActivity().isFinishing() == false) {
+                            textViewTo.setText("#none");
+                        }
+                    } else {
+                        throw Exceptions.propagate(throwable);
+                    }
+                });
     }
 
 
@@ -377,33 +408,7 @@ public class SendFragment extends BaseFragment {
 
     @Override
     public void notifyUpdate() {
-        BitshareData bitshareData = BitsharesWalletWraper.getInstance().getBitshareData();
-        if (bitshareData == null || getActivity() == null || mSpinner == null) {
-            return;
-        }
 
-        List<String> listSymbols = new ArrayList<>();
-        if (bitshareData != null) {
-            for (asset i : bitshareData.listBalances) {
-                String strSymbol = bitshareData.mapId2AssetObject.get(i.asset_id).symbol;
-                listSymbols.add(strSymbol);
-            }
-        }
-
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
-                getActivity(),
-                android.R.layout.simple_spinner_item,
-                listSymbols
-        );
-
-        if (mSpinner != null) {
-            arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-            mSpinner.setAdapter(arrayAdapter);
-        }
-
-        if (mEditTextQuantitiy != null) {
-            processCalculateFee();
-        }
     }
 
     private void processCalculateFee() {
@@ -412,11 +417,39 @@ public class SendFragment extends BaseFragment {
         final String strMemo = ((EditText) mView.findViewById(R.id.editTextMemo)).getText().toString();
 
         // 用户没有任何货币，这个symbol会为空，则会出现崩溃，进行该处理进行规避
-        if (TextUtils.isEmpty(strSymbol)) {
+        if (TextUtils.isEmpty(strQuantity) || TextUtils.isEmpty(strSymbol)) {
             return;
         }
 
-        new Thread(new Runnable() {
+        Flowable.just(0)
+                .subscribeOn(Schedulers.io())
+                .map(integer -> {
+                    asset fee = BitsharesWalletWraper.getInstance().transfer_calculate_fee(
+                            strQuantity,
+                            strSymbol,
+                            strMemo
+                    );
+
+                    BitsharesAssetObject assetObject = BitsharesApplication.getInstance()
+                            .getBitsharesDatabase().getBitsharesDao().queryAssetObjectById(fee.asset_id.toString());
+                    return new Pair<>(fee, assetObject);
+                }).observeOn(AndroidSchedulers.mainThread())
+                .subscribe(resultPair -> {
+                    if (getActivity() != null && getActivity().isFinishing() == false) {
+                        processDisplayFee(resultPair.first, resultPair.second);
+                    }
+                }, throwable -> {
+                    if (throwable instanceof NetworkStatusException) {
+                        if (getActivity() != null && getActivity().isFinishing() == false) {
+                            EditText editTextFee = (EditText) mView.findViewById(R.id.editTextFee);
+                            editTextFee.setText("N/A");
+                        }
+                    } else {
+                        throw Exceptions.propagate(throwable);
+                    }
+                });
+
+        /*new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
@@ -426,8 +459,10 @@ public class SendFragment extends BaseFragment {
                             strMemo
                     );
 
-                    asset_object assetObject = BitsharesWalletWraper.getInstance().getBitshareData().mapId2AssetObject.get(fee.asset_id);
-                    final asset_object.asset_object_legible legibleObject = assetObject.get_legible_asset_object(fee.amount);
+                    BitsharesAssetObject assetObject = BitsharesApplication.getInstance()
+                            .getBitsharesDatabase().getBitsharesDao().queryAssetObjectById(fee.asset_id.toString());
+
+
 
                     mHandler.post(new Runnable() {
                         @Override
@@ -450,16 +485,15 @@ public class SendFragment extends BaseFragment {
                     });
                 }
             }
-        }).start();
+        }).start();*/
     }
 
-    private void processDisplayFee(asset_object.asset_object_legible legibleObject) {
-        float fResult = legibleObject.lCount + (float) legibleObject.lDecimal / legibleObject.scaled_precision;
+    private void processDisplayFee(asset fee, BitsharesAssetObject assetObject) {
         EditText editTextFee = (EditText) mView.findViewById(R.id.editTextFee);
         String strResult = String.format(
                 Locale.ENGLISH,
                 "%f (%s)",
-                fResult,
+                (double)fee.amount / assetObject.precision,
                 "Cannot be modified"
         );
         editTextFee.setText(strResult);
@@ -467,7 +501,7 @@ public class SendFragment extends BaseFragment {
         Spinner spinner = (Spinner) mView.findViewById(R.id.spinner_fee_unit);
 
         List<String> listSymbols = new ArrayList<>();
-        listSymbols.add(legibleObject.symbol);
+        listSymbols.add(assetObject.symbol);
 
         ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>(
                 getActivity(),

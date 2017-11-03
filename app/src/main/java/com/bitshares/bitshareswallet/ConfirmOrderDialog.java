@@ -5,7 +5,6 @@ import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.widget.TextView;
 
-
 public class ConfirmOrderDialog {
     private Activity mActivity;
     private AlertDialog.Builder mDialogBuilder;
@@ -131,14 +130,14 @@ public class ConfirmOrderDialog {
         TextView txtSrcCoin = (TextView)view.findViewById(R.id.dco_txt_src_coin);
         txtSrcCoin.setText(confirmOrderData.getTotal());
 
-        TextView txtSrcCoinName = (TextView)view.findViewById(R.id.dco_txt_src_coin_name);
-        txtSrcCoinName.setText(confirmOrderData.getTotalType() + ":");
+        //TextView txtSrcCoinName = (TextView)view.findViewById(R.id.dco_txt_src_coin_name);
+        //txtSrcCoinName.setText(confirmOrderData.getTotalType() + ":");
 
         TextView txtTargetCoin = (TextView)view.findViewById(R.id.dco_txt_target_coin);
         txtTargetCoin.setText(confirmOrderData.getQuantity());
 
-        TextView txtTargetCoinName = (TextView)view.findViewById(R.id.dco_txt_target_coin_name);
-        txtTargetCoinName.setText(confirmOrderData.getQuantityType() + ":");
+        //TextView txtTargetCoinName = (TextView)view.findViewById(R.id.dco_txt_target_coin_name);
+        //txtTargetCoinName.setText(confirmOrderData.getQuantityType() + ":");
 
         TextView txtExpiration = (TextView)view.findViewById(R.id.dco_txt_expiration);
         txtExpiration.setText(confirmOrderData.getTimeExpiration());

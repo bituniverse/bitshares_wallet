@@ -1,13 +1,15 @@
 package com.bitshares.bitshareswallet.wallet.graphene.chain;
 
+import android.text.TextUtils;
+
 import com.bitshares.bitshareswallet.wallet.account_object;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
 import java.lang.reflect.Type;
 import java.util.HashMap;
@@ -21,6 +23,7 @@ public class object_id<T> {
             mMapTypeToId.put(asset_object.class, types.object_type.asset_object_type);
             mMapTypeToId.put(account_object.class, types.object_type.account_object_type);
             mMapTypeToId.put(limit_order_object.class, types.object_type.limit_order_object_type);
+            mMapTypeToId.put(operation_history_object.class, types.object_type.operation_history_object_type);
         }
     }
 
@@ -86,7 +89,7 @@ public class object_id<T> {
     }*/
 
     public static <T> object_id<T> create_from_string(String strId) {
-        if (strId.matches("\\d+.\\d+.\\d+") == false) {
+        if (TextUtils.isEmpty(strId) || !strId.matches("\\d+.\\d+.\\d+")) {
             return null;
         }
 

@@ -138,4 +138,30 @@
     <string name="label_bts_cny">bitCNY/BTS</string>
     <string name="label_bts">BTS</string>
     <string name="label_cny">bitCNY</string>
+
+    <string name="create_account_activity_title">创建帐号</string>
+    <string name="create_account_password_confirm">确认密码:</string>
+    <string name="create_account_activity_button">创建帐号</string>
+    <string name="create_account_activity_network_fail">无法连接到服务器</string>
+    <string name="create_account_activity_account_object_exist">该帐号已经存在</string>
+    <string name="create_account_activity_response_fail">服务器没有正常返回数据</string>
+    <string name="create_account_activity_create_fail">创建帐号失败</string>
+
+
+    <string name="create_account_account_name_error_full_letter">用户名不能只包含字母</string>
+    <string name="create_account_account_name_too_short">用户名过短</string>
+    <string name="create_account_account_name_error_start_letter">用户名需要以字母开头</string>
+    <string name="create_account_check_box">我确认我已经备份了我的密码（您的密码是登录的唯一凭证，一旦丢失，您帐号中的资产也会丢失，无法找回）</string>
+    <string name="create_account_password_requirement">密码需要至少12个字符，并至少包含1个大写字母和1个数字</string>
+    <string name="create_account_password_confirm_error">两次输入的密码不一致</string>
+
+    <string name="create_account_account_name_empty">还未填写账号名</string>
+    <string name="create_account_password_empty">还未填写密码</string>
+    <string name="create_account_password_confirm_empty">请再填写一次密码</string>
+    <string name="create_account_check_box_confirm">请阅读并确认勾选框后的内容</string>
+
+    <string name="trade_fragment_quantity">数量</string>
+    <string name="label_change">涨跌:</string>
+
+
 </resources>

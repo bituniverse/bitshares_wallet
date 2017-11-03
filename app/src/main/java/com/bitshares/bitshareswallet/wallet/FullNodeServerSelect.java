@@ -16,6 +16,9 @@ import okhttp3.Response;
 import okhttp3.WebSocket;
 import okhttp3.WebSocketListener;
 
+/**
+ * Created by lorne on 07/09/2017.
+ */
 
 public class FullNodeServerSelect {
     private List<String> mListNode = Arrays.asList(

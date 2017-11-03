@@ -1,5 +1,6 @@
 package com.bitshares.bitshareswallet;
 
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Bundle;
@@ -11,6 +12,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.bitshares.bitshareswallet.room.BitsharesBalanceAsset;
+import com.bitshares.bitshareswallet.viewmodel.WalletViewModel;
 import com.bitshares.bitshareswallet.wallet.BitshareData;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.asset;
@@ -65,66 +68,46 @@ public class BalancesFragment extends BaseFragment {
     }
 
     class BalancesAdapter extends RecyclerView.Adapter<BalanceItemViewHolder> {
-        private BitshareData mBitsharesData;
-        private Map<object_id<asset_object>, asset_object> mMapId2AssetObject;
-        private List<asset> mListAsset = new ArrayList<>();
-        private asset_object mAssetObjectBase;
-        private final LayoutInflater mLayoutInflater;
-        public BalancesAdapter(Context context) {
-            mLayoutInflater = LayoutInflater.from(context);
-        }
+        private List<BitsharesBalanceAsset> bitsharesBalanceAssetList;
 
         @Override
         public BalanceItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            View view = mLayoutInflater.inflate(R.layout.recyclerview_item_balances, parent, false);
+            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.recyclerview_item_balances, parent, false);
             return new BalanceItemViewHolder(view);
         }
 
         @Override
         public void onBindViewHolder(BalanceItemViewHolder holder, int position) {
-            asset assetBalance = mListAsset.get(position);
-            asset_object assetObject = mMapId2AssetObject.get(assetBalance.asset_id);
-
-            asset_object.asset_object_legible assetObjectLegible = assetObject.get_legible_asset_object(assetBalance.amount);
-            double fResult = (double)assetObjectLegible.lDecimal / assetObjectLegible.scaled_precision + assetObjectLegible.lCount;
-
+            BitsharesBalanceAsset bitsharesBalanceAsset = bitsharesBalanceAssetList.get(position);
             String strBalances = String.format(
                     Locale.ENGLISH,
                     "%.4f",
-                    fResult
+                    (float)bitsharesBalanceAsset.amount / bitsharesBalanceAsset.quote_precision
             );
 
             holder.viewNumber.setText(strBalances);
-            holder.viewUnit.setText(assetObjectLegible.symbol);
-            if (assetObject.is_base_asset_object() == false) {
-                asset assetAmount = mBitsharesData.convert_asset_to_base(assetBalance, mAssetObjectBase);
-                //long lBaseAmount = assetObject.convert_exchange_to_base(assetBalance.amount);
-
-                assetObjectLegible = mAssetObjectBase.get_legible_asset_object(assetAmount.amount);
-                fResult = (double)assetObjectLegible.lDecimal / assetObjectLegible.scaled_precision + assetObjectLegible.lCount;
-                int nResult = (int)Math.rint(fResult);
+            holder.viewUnit.setText(bitsharesBalanceAsset.quote);
+            if (bitsharesBalanceAsset.quote.compareTo("BTS") != 0) {
+                int nResult = (int)Math.rint(bitsharesBalanceAsset.total / bitsharesBalanceAsset.base_precision);
 
                 holder.viewEqual.setText("=");
                 holder.viewConvertNumber.setText(Integer.valueOf(nResult).toString());
-                holder.viewConvertUnit.setText(assetObjectLegible.symbol);
+                holder.viewConvertUnit.setText("BTS");
             }
 
         }
 
         @Override
         public int getItemCount() {
-            if (mListAsset == null) {
+            if (bitsharesBalanceAssetList == null) {
                 return 0;
             } else {
-                return mListAsset.size();
+                return bitsharesBalanceAssetList.size();
             }
         }
 
-        public void notifyBalancesDataChanged(BitshareData bitshareData) {
-            mBitsharesData = bitshareData;
-            mListAsset = bitshareData.listBalances;
-            mMapId2AssetObject = bitshareData.mapId2AssetObject;
-            mAssetObjectBase = mMapId2AssetObject.get(new object_id<asset_object>(0, asset_object.class));
+        public void notifyBalancesDataChanged(List<BitsharesBalanceAsset> bitsharesBalanceAssetList) {
+            this.bitsharesBalanceAssetList = bitsharesBalanceAssetList;
 
             notifyDataSetChanged();
         }
@@ -164,11 +147,20 @@ public class BalancesFragment extends BaseFragment {
     @Override
     public void onShow() {
         super.onShow();
-        BitshareData bitshareData = BitsharesWalletWraper.getInstance().getBitshareData();
-
-        if (bitshareData != null) {
-            mBalancesAdapter.notifyBalancesDataChanged(bitshareData);
-        }
+        WalletViewModel walletViewModel = ViewModelProviders.of(getActivity()).get(WalletViewModel.class);
+        walletViewModel.getBalanceData().observe(
+                this, resourceBalanceList -> {
+                    switch (resourceBalanceList.status) {
+                        case SUCCESS:
+                            mBalancesAdapter.notifyBalancesDataChanged(resourceBalanceList.data);
+                            break;
+                        case LOADING:
+                            if (resourceBalanceList.data != null) {
+                                mBalancesAdapter.notifyBalancesDataChanged(resourceBalanceList.data);
+                            }
+                            break;
+                    }
+                });
     }
 
     @Override
@@ -178,7 +170,7 @@ public class BalancesFragment extends BaseFragment {
         View view = inflater.inflate(R.layout.fragment_balances, container, false);
         RecyclerView recyclerView = (RecyclerView)view.findViewById(R.id.recyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        mBalancesAdapter = new BalancesAdapter(getActivity());
+        mBalancesAdapter = new BalancesAdapter();
         recyclerView.setAdapter(mBalancesAdapter);
 
         return view;
@@ -225,9 +217,6 @@ public class BalancesFragment extends BaseFragment {
 
     @Override
     public void notifyUpdate() {
-        BitshareData bitshareData = BitsharesWalletWraper.getInstance().getBitshareData();
-        if (bitshareData != null && mBalancesAdapter != null) {
-            mBalancesAdapter.notifyBalancesDataChanged(bitshareData);
-        }
+
     }
 }

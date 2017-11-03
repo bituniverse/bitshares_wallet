@@ -43,6 +43,7 @@ public class types {
         public static final int account_object_type = 2;
         public static final int asset_object_type = 3;
         public static final int limit_order_object_type = 7;
+        public static final int operation_history_object_type = 11;
     }
     /*public enum object_type
     {
