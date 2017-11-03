@@ -1,10 +1,12 @@
 package com.bitshares.bitshareswallet.viewmodel;
 
 import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MediatorLiveData;
 import android.arch.lifecycle.MutableLiveData;
 import android.arch.lifecycle.Transformations;
 import android.arch.lifecycle.ViewModel;
 
+import com.bitshares.bitshareswallet.livedata.StatusChangeLiveData;
 import com.bitshares.bitshareswallet.repository.BalanceRepository;
 import com.bitshares.bitshareswallet.room.BitsharesBalanceAsset;
 import com.bituniverse.network.Resource;
@@ -18,9 +20,25 @@ import java.util.List;
 public class WalletViewModel extends ViewModel {
     private MutableLiveData<String> currencyData = new MutableLiveData<>();
     private MutableLiveData<Integer> retryData = new MutableLiveData<>();
+    private StatusChangeLiveData statusChangeLiveData = new StatusChangeLiveData();
+    MediatorLiveData<Resource<List<BitsharesBalanceAsset>>> resultData = new MediatorLiveData<>();
 
     public WalletViewModel() {
         retryData.setValue(0);
+
+        resultData.addSource(statusChangeLiveData, statusChange -> {
+            LiveData<Resource<List<BitsharesBalanceAsset>>> balanceData = Transformations.switchMap(
+                    Transformations.switchMap(currencyData, input -> {
+                        retryData.setValue(retryData.getValue());
+                        return retryData;
+                    }),
+                    retryCount -> {
+                        return new BalanceRepository().getBalances(currencyData.getValue());
+                    });
+
+            resultData.addSource(balanceData, result -> resultData.setValue(result));
+        });
+
     }
 
     public void changeCurrency(String currency) {
@@ -28,14 +46,6 @@ public class WalletViewModel extends ViewModel {
     }
 
     public LiveData<Resource<List<BitsharesBalanceAsset>>> getBalanceData() {
-        LiveData<Resource<List<BitsharesBalanceAsset>>> resultData = Transformations.switchMap(
-                Transformations.switchMap(currencyData, input -> {
-                    retryData.setValue(retryData.getValue());
-                    return retryData;
-                }),
-                retryCount -> {
-                    return new BalanceRepository().getBalances(currencyData.getValue());
-                });
         return resultData;
     }
 

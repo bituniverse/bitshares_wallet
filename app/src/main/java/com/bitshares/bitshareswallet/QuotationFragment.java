@@ -14,10 +14,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import com.bitshares.bitshareswallet.market.MarketStat;
+import com.bitshares.bitshareswallet.data.HistoryPrice;
 import com.bitshares.bitshareswallet.market.MarketTicker;
 import com.bitshares.bitshareswallet.viewmodel.QuotationViewModel;
-import com.github.mikephil.charting.charts.CandleStickChart;
 import com.github.mikephil.charting.charts.CombinedChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Legend;
@@ -118,7 +117,7 @@ public class QuotationFragment extends BaseFragment {
                 TextView textViewLow = (TextView) mviewLayoutSelected.findViewById(R.id.textViewLow);
                 TextView textViewChange = (TextView) mviewLayoutSelected.findViewById(R.id.textViewChange);
 
-                MarketStat.HistoryPrice historyPrice = (MarketStat.HistoryPrice) candleEntry.getData();
+                HistoryPrice historyPrice = (HistoryPrice) candleEntry.getData();
                 SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd HH:mm");
                 textViewDate.setText(simpleDateFormat.format(historyPrice.date));
 
@@ -277,11 +276,11 @@ public class QuotationFragment extends BaseFragment {
         super.onHide();
     }
 
-    private void updateChartData(List<MarketStat.HistoryPrice> historyPriceList) {
+    private void updateChartData(List<HistoryPrice> historyPriceList) {
         class xAxisValueFormater implements IAxisValueFormatter {
-            private List<MarketStat.HistoryPrice> mListPrices;
+            private List<HistoryPrice> mListPrices;
 
-            public xAxisValueFormater(List<MarketStat.HistoryPrice> listPrices) {
+            public xAxisValueFormater(List<HistoryPrice> listPrices) {
                 mListPrices = listPrices;
             }
             @Override
@@ -303,12 +302,12 @@ public class QuotationFragment extends BaseFragment {
         mChart.getXAxis().setValueFormatter(xvalueFormater);
     }
 
-    private void initializeData(List<MarketStat.HistoryPrice> listHistoryPrice) {
+    private void initializeData(List<HistoryPrice> listHistoryPrice) {
         mviewLayoutSelected.setVisibility(View.INVISIBLE);
         List<CandleEntry> candleEntryList = new ArrayList<>();
         List<BarEntry> barEntryList = new ArrayList<>();
         int i = 0;
-        for (MarketStat.HistoryPrice price : listHistoryPrice) {
+        for (HistoryPrice price : listHistoryPrice) {
             int nPosition = i++;
             CandleEntry candleEntry = new CandleEntry(nPosition, (float)price.high, (float)price.low, (float)price.open, (float)price.close, price);
             candleEntryList.add(candleEntry);

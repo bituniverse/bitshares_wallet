@@ -2,19 +2,16 @@ package com.bitshares.bitshareswallet.repository;
 
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MediatorLiveData;
-import android.arch.lifecycle.MutableLiveData;
 
 import com.bitshares.bitshareswallet.BitsharesApplication;
 import com.bitshares.bitshareswallet.market.MarketTicker;
 import com.bitshares.bitshareswallet.room.BitsharesAsset;
 import com.bitshares.bitshareswallet.room.BitsharesAssetObject;
-import com.bitshares.bitshareswallet.room.BitsharesBalanceAsset;
 import com.bitshares.bitshareswallet.room.BitsharesDao;
 import com.bitshares.bitshareswallet.room.BitsharesMarketTicker;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.account_balance_object;
 import com.bitshares.bitshareswallet.wallet.account_object;
-import com.bitshares.bitshareswallet.wallet.asset;
 import com.bitshares.bitshareswallet.wallet.exception.NetworkStatusException;
 import com.bitshares.bitshareswallet.wallet.full_account_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.asset_object;
@@ -24,34 +21,32 @@ import com.bituniverse.network.Resource;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import io.reactivex.Flowable;
-import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
 /**
- * Created by lorne on 31/10/2017.
+ * Created by lorne on 03/11/2017.
  */
 
-public class BalanceRepository {
+public class AvailableBalanceRepository {
     private String mCurrency;
     private BitsharesDao bitsharesDao;
 
-    private MediatorLiveData<Resource<List<BitsharesBalanceAsset>>> result = new MediatorLiveData<>();
+    private MediatorLiveData<Resource<BitsharesAsset>> result = new MediatorLiveData<>();
 
-    public BalanceRepository() {
+    public AvailableBalanceRepository() {
         bitsharesDao = BitsharesApplication.getInstance().getBitsharesDatabase().getBitsharesDao();
     }
 
-    public LiveData<Resource<List<BitsharesBalanceAsset>>> getBalances(String currency) {
+    public LiveData<Resource<BitsharesAsset>> getTargetAvaliableBlance(String currency) {
         mCurrency = currency;
-        LiveData<List<BitsharesBalanceAsset>> balanceAssetListLiveData = bitsharesDao.queryBalance(currency);
+        LiveData<BitsharesAsset> balanceAssetListLiveData = bitsharesDao.queryTargetAvalaliableBalance(currency);
         result.addSource(
                 balanceAssetListLiveData,
                 data -> {
@@ -66,11 +61,11 @@ public class BalanceRepository {
         return result;
     }
 
-    private boolean shouldFetch(List<BitsharesBalanceAsset> bitsharesBalanceAssetList) {
+    private boolean shouldFetch(BitsharesAsset bitsharesBalanceAsset) {
         return true;
     }
 
-    private void fetchFromNetwork(final LiveData<List<BitsharesBalanceAsset>> dbSource) {
+    private void fetchFromNetwork(final LiveData<BitsharesAsset> dbSource) {
         result.addSource(dbSource, newData -> result.setValue(Resource.loading(newData)));
         // 向远程获取数据，并进行存储
         Flowable.just(0)
@@ -80,7 +75,7 @@ public class BalanceRepository {
                     return 0;
                 }).observeOn(AndroidSchedulers.mainThread())
                 .subscribe(retCode -> {
-                    LiveData<List<BitsharesBalanceAsset>> listLiveData = bitsharesDao.queryBalance(mCurrency);
+                    LiveData<BitsharesAsset> listLiveData = bitsharesDao.queryTargetAvalaliableBalance(mCurrency);
                     result.removeSource(dbSource);
                     result.addSource(listLiveData, newData -> result.setValue(Resource.success(newData)));
                 }, throwable -> {

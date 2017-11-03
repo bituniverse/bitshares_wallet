@@ -2,24 +2,16 @@ package com.bitshares.bitshareswallet;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.ListView;
 import android.widget.TextView;
 
 import com.bitshares.bitshareswallet.market.MarketTicker;
 import com.bitshares.bitshareswallet.room.BitsharesMarketTicker;
-import com.bitshares.bitshareswallet.wallet.BitshareData;
-import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.asset_object;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.bucket_object;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.object_id;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.utils;
 
 import java.text.DecimalFormat;

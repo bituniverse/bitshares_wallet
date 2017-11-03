@@ -57,7 +57,7 @@ public class BitsharesWalletWraper {
     private Map<object_id<account_object>, List<asset>> mMapAccountId2Asset = new ConcurrentHashMap<>();
     private Map<object_id<account_object>, List<operation_history_object>> mMapAccountId2History = new ConcurrentHashMap<>();
     private Map<object_id<asset_object>, asset_object> mMapAssetId2Object = new ConcurrentHashMap<>();
-    private Set<WeakReference<BitsharesDataObserver>> msetDataObserver;
+    private Set<BitsharesDataObserver> msetDataObserver;
 
     private String mstrWalletFilePath;
 
@@ -65,8 +65,6 @@ public class BitsharesWalletWraper {
 
     private static final int STATUS_INVALID = -1;
     private static final int STATUS_INITIALIZED = 0;
-
-    private BitshareData mBitshareData;
 
     private BitsharesWalletWraper() {
         mstrWalletFilePath = BitsharesApplication.getInstance().getFilesDir().getPath();
@@ -81,7 +79,7 @@ public class BitsharesWalletWraper {
     }
 
     public void registerDataObserver(BitsharesDataObserver observer) {
-        msetDataObserver.add(new WeakReference<>(observer));
+        msetDataObserver.add(observer);
     }
 
     public void unregisterDataObserver(BitsharesDataObserver observer) {
@@ -96,35 +94,23 @@ public class BitsharesWalletWraper {
                     // market发生变化，需要进行对应的数据更新，查看里面对应的id，然后进行数据更新
                     for (operations.operation_type operationType : message.listFillOrder) {
                         if (operationType.nOperationType == operations.ID_FILL_LMMIT_ORDER_OPERATION) {
-                            for (WeakReference<BitsharesDataObserver> observer : msetDataObserver) {
-                                if (observer.get() != null) {
+                            for (BitsharesDataObserver observer : msetDataObserver) {
                                     operations.fill_order_operation operation = (operations.fill_order_operation)operationType.operationContent;
-                                    observer.get().onMarketFillUpdate(operation.pays.asset_id, operation.receives.asset_id);
-                                } else {
-                                    msetDataObserver.remove(observer);
-                                }
+                                    observer.onMarketFillUpdate(operation.pays.asset_id, operation.receives.asset_id);
                             }
                         }
                     }
                 } else if (message.bAccountChanged) {
-                    for (WeakReference<BitsharesDataObserver> observer : msetDataObserver) {
-                        if (observer.get() != null) {
-                            observer.get().onAccountChanged();
-                        } else {
-                            msetDataObserver.remove(observer);
-                        }
+                    for (BitsharesDataObserver observer : msetDataObserver) {
+                        observer.onAccountChanged();
                     }
                 }
             }
 
             @Override
             public void onDisconnect() {
-                for (WeakReference<BitsharesDataObserver> observer : msetDataObserver) {
-                    if (observer.get() != null) {
-                        observer.get().onDisconnect();
-                    } else {
-                        msetDataObserver.remove(observer);
-                    }
+                for (BitsharesDataObserver observer : msetDataObserver) {
+                    observer.onDisconnect();
                 }
             }
         });

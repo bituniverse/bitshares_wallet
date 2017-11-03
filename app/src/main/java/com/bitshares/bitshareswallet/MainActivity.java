@@ -26,19 +26,10 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatDelegate;
-import android.support.v7.preference.ListPreference;
-import android.support.v7.preference.ListPreferenceDialogFragmentCompat;
-import android.support.v7.preference.Preference;
-import android.support.v7.preference.PreferenceFragmentCompat;
 import android.support.v7.preference.PreferenceManager;
-import android.support.v7.preference.PreferenceScreen;
 import android.support.v7.widget.Toolbar;
 import android.util.Pair;
-import android.util.TypedValue;
-import android.view.ContextThemeWrapper;
-import android.view.LayoutInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.webkit.WebSettings;
@@ -47,6 +38,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bitshares.bitshareswallet.room.BitsharesAsset;
+import com.bitshares.bitshareswallet.room.BitsharesDao;
+import com.bitshares.bitshareswallet.room.BitsharesOperationHistory;
 import com.bitshares.bitshareswallet.viewmodel.QuotationViewModel;
 import com.bitshares.bitshareswallet.viewmodel.WalletViewModel;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
@@ -55,6 +49,11 @@ import com.bitshares.bitshareswallet.wallet.account_object;
 import com.bitshares.bitshareswallet.wallet.fc.crypto.sha256_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.signed_transaction;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.utils;
+import java.util.List;
+
+import io.reactivex.Flowable;
+import io.reactivex.schedulers.Schedulers;
+
 
 
 public class MainActivity extends AppCompatActivity
@@ -78,6 +77,7 @@ public class MainActivity extends AppCompatActivity
     private TextView mTxtTitle;
     private LinearLayout mLayoutTitle;
     private BottomNavigationView mBottomNavigation;
+    private Handler mHandler = new Handler();
 
     private static final int REQUEST_CODE_SETTINGS = 1;
 
@@ -344,6 +344,18 @@ public class MainActivity extends AppCompatActivity
         builder.setPositiveButton(R.string.log_out_dialog_confirm_button, new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
+                Flowable.just(0)
+                        .subscribeOn(Schedulers.io())
+                        .map(integer -> {
+                            BitsharesDao bitsharesDao = BitsharesApplication.getInstance().getBitsharesDatabase().getBitsharesDao();;
+                            List<BitsharesAsset> bitsharesAssetList = bitsharesDao.queryBalanceList();
+                            List<BitsharesOperationHistory> bitsharesOperationHistoryList = bitsharesDao.queryOperationHistoryList();
+                            bitsharesDao.deleteBalance(bitsharesAssetList);
+                            bitsharesDao.deleteOperationHistory(bitsharesOperationHistoryList);
+
+                            return 0;
+                        }).subscribe();
+
                 BitsharesWalletWraper.getInstance().reset();
                 Intent intent = new Intent(MainActivity.this, SignUpButtonActivity.class);
                 startActivity(intent);

@@ -34,43 +34,6 @@ import io.reactivex.schedulers.Schedulers;
 public class MarketTickerRepository {
     BitsharesDao bitsharesDao;
     private MediatorLiveData<Resource<List<BitsharesMarketTicker>>> result = new MediatorLiveData<>();
-    private boolean bSubscribe = false;
-    private BitsharesWalletWraper.BitsharesDataObserver bitsharesDataObserver = new BitsharesWalletWraper.BitsharesDataObserver() {
-
-        @Override
-        public void onDisconnect() {
-            bSubscribe = false;
-            Flowable.just(0)
-                    .subscribeOn(Schedulers.io())
-                    .map(integer -> {
-                        fetchMarketTicker();
-                        return 0;
-                    }).subscribe(integer -> {
-                         // do nothing
-                    }, throwable -> {
-                        throwable.printStackTrace();
-                    });
-        }
-
-        @Override
-        public void onMarketFillUpdate(object_id<asset_object> base, object_id<asset_object> quote) {
-            Flowable.just(0)
-                    .subscribeOn(Schedulers.io())
-                    .map(integer -> {
-                        fetchMarketTicker();
-                        return 0;
-                    }).subscribe(integer -> {
-                        // do nothing
-                    }, throwable -> {
-                        throwable.printStackTrace();
-                    });
-        }
-
-        @Override
-        public void onAccountChanged() {
-
-        }
-    };
 
     public MarketTickerRepository() {
         bitsharesDao = BitsharesApplication.getInstance().getBitsharesDatabase().getBitsharesDao();
@@ -91,11 +54,7 @@ public class MarketTickerRepository {
     }
 
     private boolean shouldFetch(List<BitsharesMarketTicker> bitsharesMarketTickerList) {
-        if (bSubscribe == false || bitsharesMarketTickerList == null || bitsharesMarketTickerList.isEmpty()) {
-            return true;
-        } else {
-            return false;
-        }
+        return true;
     }
 
     private void fetchFromNetwork(final LiveData<List<BitsharesMarketTicker>> dbSource) {
@@ -169,26 +128,12 @@ public class MarketTickerRepository {
             bitsharesMarketTicker.id = 0;
             bitsharesMarketTicker.marketTicker = marketTicker;
 
-            if (bSubscribe == false) {
-                BitsharesWalletWraper.getInstance().subscribe_to_market(assetObjectQuote.asset_id, assetObjectBase.asset_id);
-            }
+            BitsharesWalletWraper.getInstance().subscribe_to_market(assetObjectQuote.asset_id, assetObjectBase.asset_id);
+
             bitsharesMarketTickerList.add(bitsharesMarketTicker);
         }
         bitsharesDao.insertAssetObject(bitsharesAssetObjectList);
         bitsharesDao.insertMarketTicker(bitsharesMarketTickerList);
-
-        subscribe_callback();
     }
 
-    private synchronized void subscribe_callback() throws NetworkStatusException {
-        if (bSubscribe == false) {
-            int nRet = BitsharesWalletWraper.getInstance().set_subscribe_callback();
-            if (nRet < 0) {
-                throw new NetworkStatusException("It can't connect to the server");
-            }
-
-            bSubscribe = true;
-            BitsharesWalletWraper.getInstance().registerDataObserver(bitsharesDataObserver);
-        }
-    }
 }

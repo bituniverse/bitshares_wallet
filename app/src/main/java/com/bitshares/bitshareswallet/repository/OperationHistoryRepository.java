@@ -37,44 +37,6 @@ import io.reactivex.schedulers.Schedulers;
 public class OperationHistoryRepository {
     private BitsharesDao bitsharesDao;
     private MediatorLiveData<Resource<List<BitsharesOperationHistory>>> result = new MediatorLiveData<>();
-    private boolean bSubscribe = false;
-
-    private BitsharesWalletWraper.BitsharesDataObserver bitsharesDataObserver = new BitsharesWalletWraper.BitsharesDataObserver() {
-        @Override
-        public void onDisconnect() {
-            bSubscribe = false;
-
-            Flowable.just(0)
-                    .subscribeOn(Schedulers.io())
-                    .map(integer -> {
-                        fetchOperationHistory(null);
-                        return 0;
-                    }).subscribe(integer -> {
-                         // do nothing
-                    }, throwable -> {
-                        throwable.printStackTrace();
-                    });
-        }
-
-        @Override
-        public void onMarketFillUpdate(object_id<asset_object> base, object_id<asset_object> quote) {
-
-        }
-
-        @Override
-        public void onAccountChanged() {
-            Flowable.just(0)
-                    .subscribeOn(Schedulers.io())
-                    .map(integer -> {
-                        fetchOperationHistory(null);
-                        return 0;
-                    }).subscribe(integer -> {
-                     // do nothing
-                    }, throwable -> {
-                        throwable.printStackTrace();
-                    });
-        }
-    };
 
     public OperationHistoryRepository() {
         bitsharesDao = BitsharesApplication.getInstance().getBitsharesDatabase().getBitsharesDao();
@@ -93,11 +55,7 @@ public class OperationHistoryRepository {
     }
 
     private boolean shouldFetch(List<BitsharesOperationHistory> bitsharesOperationHistoryList) {
-        if (bSubscribe == false || bitsharesOperationHistoryList == null || bitsharesOperationHistoryList.isEmpty()) {
-            return true;
-        } else {
-            return false;
-        }
+        return true;
     }
 
     private void fetchFromNetwork(final LiveData<List<BitsharesOperationHistory>> dbSource) {
@@ -122,19 +80,6 @@ public class OperationHistoryRepository {
 
     public LiveData<Resource<List<BitsharesOperationHistory>>> getOperationHistory() {
         return result;
-    }
-
-    private synchronized void subscribe_callback() throws NetworkStatusException {
-        if (bSubscribe == false) {
-            int nRet = BitsharesWalletWraper.getInstance().set_subscribe_callback();
-            if (nRet < 0) {
-                throw new NetworkStatusException("It can't connect to the server");
-            }
-
-            bSubscribe = true;
-
-            BitsharesWalletWraper.getInstance().registerDataObserver(bitsharesDataObserver);
-        }
     }
 
     private void fetchOperationHistory(LiveData<List<BitsharesOperationHistory>> dbSource) throws NetworkStatusException {
@@ -166,8 +111,6 @@ public class OperationHistoryRepository {
             }
         }
         operationHistoryObjectList = operationHistoryObjectFilter;
-
-        subscribe_callback();
 
         List<BitsharesOperationHistory> bitsharesOperationHistoryList = new ArrayList<>();
 

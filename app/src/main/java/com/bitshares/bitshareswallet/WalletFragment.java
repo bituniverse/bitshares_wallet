@@ -10,7 +10,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
@@ -21,9 +20,6 @@ import android.widget.TextView;
 
 import com.bitshares.bitshareswallet.room.BitsharesBalanceAsset;
 import com.bitshares.bitshareswallet.viewmodel.WalletViewModel;
-import com.bitshares.bitshareswallet.wallet.BitshareData;
-import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.signed_transaction;
 
 import java.util.List;
 import java.util.Locale;
@@ -105,8 +101,8 @@ public class WalletFragment extends BaseFragment {
     }
 
     @Override
-    public void onShow() {
-        super.onShow();
+    public void onResume() {
+        super.onResume();
 
         WalletViewModel walletViewModel = ViewModelProviders.of(getActivity()).get(WalletViewModel.class);
         walletViewModel.getBalanceData().observe(
@@ -125,6 +121,11 @@ public class WalletFragment extends BaseFragment {
                             break;
                     }
                 });
+    }
+
+    @Override
+    public void onShow() {
+        super.onShow();
     }
 
     @Override

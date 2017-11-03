@@ -8,7 +8,6 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.preference.PreferenceManager;
@@ -26,23 +25,21 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bitshares.bitshareswallet.market.MarketStat;
+import com.bitshares.bitshareswallet.room.BitsharesAsset;
 import com.bitshares.bitshareswallet.viewmodel.SellBuyViewModel;
-import com.bitshares.bitshareswallet.wallet.BitshareData;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.Broadcast;
 import com.bitshares.bitshareswallet.wallet.asset;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.asset_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.global_property_object;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.object_id;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.utils;
+import com.bituniverse.network.Status;
 import com.bituniverse.utils.NumericUtil;
 import com.kaopiz.kprogresshud.KProgressHUD;
 
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
@@ -195,12 +192,15 @@ public class TransactionSellBuyFragment extends BaseFragment
             viewModel.changeBalanceAsset(quoteAsset);
         }
 
-        viewModel.getAvaliableBalance().observe(this, bitsharesAsset -> {
-            if (bitsharesAsset != null) {
-                DecimalFormat decimalFormat = new DecimalFormat("#.####");
-                balanceText.setText(decimalFormat.format((double) bitsharesAsset.amount / bitsharesAsset.precision));
-            } else {
-                balanceText.setText("0");
+        viewModel.getAvaliableBalance().observe(this, bitsharesAssetResource -> {
+            if (bitsharesAssetResource.status == Status.SUCCESS) {
+                BitsharesAsset bitsharesAsset = bitsharesAssetResource.data;
+                if (bitsharesAsset != null) {
+                    DecimalFormat decimalFormat = new DecimalFormat("#.####");
+                    balanceText.setText(decimalFormat.format((double) bitsharesAsset.amount / bitsharesAsset.precision));
+                } else {
+                    balanceText.setText("0");
+                }
             }
         });
     }

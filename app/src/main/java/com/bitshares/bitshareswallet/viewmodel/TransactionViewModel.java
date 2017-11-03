@@ -2,9 +2,11 @@ package com.bitshares.bitshareswallet.viewmodel;
 
 import android.arch.lifecycle.LiveData;
 import android.arch.lifecycle.MediatorLiveData;
+import android.arch.lifecycle.Transformations;
 import android.arch.lifecycle.ViewModel;
 
 import com.bitshares.bitshareswallet.BitsharesApplication;
+import com.bitshares.bitshareswallet.livedata.StatusChangeLiveData;
 import com.bitshares.bitshareswallet.repository.OperationHistoryRepository;
 import com.bitshares.bitshareswallet.room.BitsharesAccountObject;
 import com.bitshares.bitshareswallet.room.BitsharesAssetObject;
@@ -32,6 +34,7 @@ public class TransactionViewModel extends ViewModel {
     };
 
     private BitsharesDao bitsharesDao;
+    private StatusChangeLiveData statusChangeLiveData = new StatusChangeLiveData();
     private MediatorLiveData<Resource<OperationHistoryWrapper>> result = new MediatorLiveData<>();
     private List<BitsharesOperationHistory> bitsharesOperationHistoryList;
     private List<BitsharesAccountObject> bitsharesAccountObjectList;
@@ -42,8 +45,9 @@ public class TransactionViewModel extends ViewModel {
     }
 
     public LiveData<Resource<OperationHistoryWrapper>> getOperationHistory() {
-        LiveData<Resource<List<BitsharesOperationHistory>>> resourceLiveDataHistoryList =
-                new OperationHistoryRepository().getOperationHistory();
+        LiveData<Resource<List<BitsharesOperationHistory>>> resourceLiveDataHistoryList = Transformations.switchMap(
+                statusChangeLiveData, statusChange -> new OperationHistoryRepository().getOperationHistory()
+        );
         result.addSource(resourceLiveDataHistoryList, resourceList -> {
             if (resourceList.status == Status.ERROR) {
                 result.setValue(Resource.error(resourceList.message, null));

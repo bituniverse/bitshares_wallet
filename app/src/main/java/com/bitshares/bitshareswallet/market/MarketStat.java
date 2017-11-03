@@ -5,13 +5,13 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.text.format.DateUtils;
 
+import com.bitshares.bitshareswallet.data.HistoryPrice;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.account_object;
 import com.bitshares.bitshareswallet.wallet.asset;
 import com.bitshares.bitshareswallet.wallet.full_account_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.asset_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.bucket_object;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.global_config_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.limit_order_object;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.price;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.utils;
@@ -79,15 +79,6 @@ public class MarketStat {
 
     private static String makeMarketName(String base, String quote) {
         return String.format("%s_%s", base.toLowerCase(), quote.toLowerCase());
-    }
-
-    public static class HistoryPrice {
-        public double high;
-        public double low;
-        public double open;
-        public double close;
-        public double volume;
-        public Date date;
     }
 
     public static class Stat {

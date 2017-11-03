@@ -6,11 +6,9 @@ import android.text.format.DateUtils;
 import android.util.Pair;
 
 import com.bitshares.bitshareswallet.BitsharesApplication;
-import com.bitshares.bitshareswallet.market.MarketStat;
-import com.bitshares.bitshareswallet.market.MarketTicker;
+import com.bitshares.bitshareswallet.data.HistoryPrice;
 import com.bitshares.bitshareswallet.room.BitsharesAssetObject;
 import com.bitshares.bitshareswallet.room.BitsharesDao;
-import com.bitshares.bitshareswallet.room.BitsharesMarketTicker;
 import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
 import com.bitshares.bitshareswallet.wallet.exception.NetworkStatusException;
 import com.bitshares.bitshareswallet.wallet.graphene.chain.bucket_object;
@@ -22,7 +20,6 @@ import java.util.Date;
 import java.util.List;
 
 import io.reactivex.Flowable;
-import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.schedulers.Schedulers;
 
@@ -33,13 +30,13 @@ import io.reactivex.schedulers.Schedulers;
 public class HistoryPriceRepository {
     private BitsharesDao bitsharesDao;
     private Pair<String, String> currencyPair;
-    private MutableLiveData<Resource<List<MarketStat.HistoryPrice>>> result = new MutableLiveData<>();
+    private MutableLiveData<Resource<List<HistoryPrice>>> result = new MutableLiveData<>();
     public HistoryPriceRepository(Pair<String, String> currencyPair) {
         this.currencyPair = currencyPair;
         bitsharesDao = BitsharesApplication.getInstance().getBitsharesDatabase().getBitsharesDao();
     }
 
-    public LiveData<Resource<List<MarketStat.HistoryPrice>>> getHistoryPrice() {
+    public LiveData<Resource<List<HistoryPrice>>> getHistoryPrice() {
         result.setValue(Resource.loading(null));
         Flowable.just(0)
                 .subscribeOn(Schedulers.io())
@@ -55,7 +52,7 @@ public class HistoryPriceRepository {
         return result;
     }
 
-    private List<MarketStat.HistoryPrice> fetchFromNetwork(Pair<String, String> currencyPair) throws NetworkStatusException {
+    private List<HistoryPrice> fetchFromNetwork(Pair<String, String> currencyPair) throws NetworkStatusException {
         int nRet = BitsharesWalletWraper.getInstance().build_connect();
         if (nRet == -1) {
             throw new NetworkStatusException("It can't connect to the server");
@@ -70,8 +67,37 @@ public class HistoryPriceRepository {
         }
     }
 
-    public List<MarketStat.HistoryPrice> prepare_k_line_data(BitsharesAssetObject assetObjectBase,
-                                                             BitsharesAssetObject assetObjectQuote) throws NetworkStatusException {
+    /*public void process_market_fill_change(operations.fill_order_operation fillOrderOperation) {
+        asset_object assetObjectPay = mapId2AssetObject.get(fillOrderOperation.pays.asset_id);
+        asset_object assetObjectReceive = mapId2AssetObject.get(fillOrderOperation.receives.asset_id);
+
+        try {
+            // 针对当前的ticker数据进行更新
+            Pair<String, String> pairCurrency = new Pair<>(
+                    utils.getAssetSymbolDisply(assetObjectPay.symbol),
+                    utils.getAssetSymbolDisply(assetObjectReceive.symbol)
+            );
+            if (mapMarketCurrencyPair.containsKey(pairCurrency)) {
+                MarketTicker marketTicker = BitsharesWalletWraper.getInstance().get_ticker(assetObjectReceive.symbol, assetObjectPay.symbol);
+                mapMarketCurrencyPair.put(pairCurrency, marketTicker);
+
+                prepare_k_line_data(assetObjectPay, assetObjectReceive);
+
+            } else {
+                MarketTicker marketTicker = BitsharesWalletWraper.getInstance().get_ticker(assetObjectPay.symbol, assetObjectReceive.symbol);
+                mapMarketCurrencyPair.put(
+                        new Pair<>(utils.getAssetSymbolDisply(assetObjectReceive.symbol), utils.getAssetSymbolDisply(assetObjectPay.symbol)),
+                        marketTicker
+                );
+                prepare_k_line_data(assetObjectReceive, assetObjectPay);
+            }
+        } catch (NetworkStatusException e) {
+            e.printStackTrace();
+        }
+    }*/
+
+    public List<HistoryPrice> prepare_k_line_data(BitsharesAssetObject assetObjectBase,
+                                                  BitsharesAssetObject assetObjectQuote) throws NetworkStatusException {
         Date startDate = new Date(System.currentTimeMillis() - 24 * 3600 * 7 * 1000);
         Date endDate = new Date(System.currentTimeMillis() + DateUtils.DAY_IN_MILLIS);
 
@@ -84,7 +110,7 @@ public class HistoryPriceRepository {
         );
 
         if (bucketObjectList != null) {
-            List<MarketStat.HistoryPrice> listHistoryPrices = new ArrayList<>();
+            List<HistoryPrice> listHistoryPrices = new ArrayList<>();
             long lastBucketTime = 0;
             for (bucket_object bucketObject : bucketObjectList) {
                 if (lastBucketTime == 0) {
@@ -115,10 +141,10 @@ public class HistoryPriceRepository {
         }
     }
 
-    private void fillHistoryPrice(List<MarketStat.HistoryPrice> listHistoryPrices, long lCount, long lSeconds) {
-        MarketStat.HistoryPrice lastHistoryPrice = listHistoryPrices.get(listHistoryPrices.size() - 1);
+    private void fillHistoryPrice(List<HistoryPrice> listHistoryPrices, long lCount, long lSeconds) {
+        HistoryPrice lastHistoryPrice = listHistoryPrices.get(listHistoryPrices.size() - 1);
         for (int i = 0; i < lCount; ++i) {
-            MarketStat.HistoryPrice historyPrice = new MarketStat.HistoryPrice();
+            HistoryPrice historyPrice = new HistoryPrice();
             historyPrice.open = lastHistoryPrice.close;
             historyPrice.close = lastHistoryPrice.close;
             historyPrice.high = lastHistoryPrice.close;
@@ -129,10 +155,10 @@ public class HistoryPriceRepository {
         }
     }
 
-    private MarketStat.HistoryPrice priceFromBucket(bucket_object bucket,
-                                                    BitsharesAssetObject assetObjectBase,
-                                                    BitsharesAssetObject assetObjectQuote) {
-        MarketStat.HistoryPrice price = new MarketStat.HistoryPrice();
+    private HistoryPrice priceFromBucket(bucket_object bucket,
+                                         BitsharesAssetObject assetObjectBase,
+                                         BitsharesAssetObject assetObjectQuote) {
+        HistoryPrice price = new HistoryPrice();
         price.date = bucket.key.open;
         if (bucket.key.quote.equals(assetObjectBase.asset_id)) {
             price.high = utils.get_asset_price(bucket.high_base, assetObjectQuote,

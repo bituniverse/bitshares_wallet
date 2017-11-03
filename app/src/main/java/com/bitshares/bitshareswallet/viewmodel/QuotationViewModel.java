@@ -9,8 +9,8 @@ import android.support.v7.preference.PreferenceManager;
 import android.util.Pair;
 
 import com.bitshares.bitshareswallet.BitsharesApplication;
-import com.bitshares.bitshareswallet.market.MarketStat;
-import com.bitshares.bitshareswallet.market.MarketTicker;
+import com.bitshares.bitshareswallet.data.HistoryPrice;
+import com.bitshares.bitshareswallet.livedata.MarketChangeLiveData;
 import com.bitshares.bitshareswallet.repository.HistoryPriceRepository;
 import com.bitshares.bitshareswallet.repository.MarketTickerRepository;
 import com.bitshares.bitshareswallet.room.BitsharesMarketTicker;
@@ -24,10 +24,13 @@ import java.util.List;
  */
 
 public class QuotationViewModel extends ViewModel {
-    public MutableLiveData<Pair<String, String>> mutableLiveDataSelected = new MutableLiveData<>();
+    private MutableLiveData<Pair<String, String>> mutableLiveDataSelected = new MutableLiveData<>();
+    private MarketChangeLiveData marketChangeLiveData = new MarketChangeLiveData();
 
     public LiveData<Resource<List<BitsharesMarketTicker>>> getMarketTicker() {
-        return new MarketTickerRepository().queryMarketTicker();
+        return Transformations.switchMap(marketChangeLiveData, marketChange -> {
+            return new MarketTickerRepository().queryMarketTicker();
+        });
     }
 
     public void selectedMarketTicker(Pair<String, String> currencyPair) {
@@ -50,7 +53,7 @@ public class QuotationViewModel extends ViewModel {
         return mutableLiveDataSelected;
     }
 
-    public LiveData<Resource<List<MarketStat.HistoryPrice>>> getHistoryPrice() {
+    public LiveData<Resource<List<HistoryPrice>>> getHistoryPrice() {
         return Transformations.switchMap(mutableLiveDataSelected, currencyPair -> {
             return new HistoryPriceRepository(currencyPair).getHistoryPrice();
         });

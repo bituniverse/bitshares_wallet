@@ -14,16 +14,9 @@ import android.widget.TextView;
 
 import com.bitshares.bitshareswallet.room.BitsharesBalanceAsset;
 import com.bitshares.bitshareswallet.viewmodel.WalletViewModel;
-import com.bitshares.bitshareswallet.wallet.BitshareData;
-import com.bitshares.bitshareswallet.wallet.BitsharesWalletWraper;
-import com.bitshares.bitshareswallet.wallet.asset;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.asset_object;
-import com.bitshares.bitshareswallet.wallet.graphene.chain.object_id;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 
 /**
@@ -145,8 +138,9 @@ public class BalancesFragment extends BaseFragment {
     }
 
     @Override
-    public void onShow() {
-        super.onShow();
+    public void onResume() {
+        super.onResume();
+
         WalletViewModel walletViewModel = ViewModelProviders.of(getActivity()).get(WalletViewModel.class);
         walletViewModel.getBalanceData().observe(
                 this, resourceBalanceList -> {
@@ -161,6 +155,11 @@ public class BalancesFragment extends BaseFragment {
                             break;
                     }
                 });
+    }
+
+    @Override
+    public void onShow() {
+        super.onShow();
     }
 
     @Override

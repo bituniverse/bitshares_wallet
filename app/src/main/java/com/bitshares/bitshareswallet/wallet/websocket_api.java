@@ -1,6 +1,7 @@
 package com.bitshares.bitshareswallet.wallet;
 
 import android.text.TextUtils;
+import android.util.Pair;
 
 import com.bitshares.bitshareswallet.market.MarketTicker;
 import com.bitshares.bitshareswallet.market.MarketTrade;
@@ -36,6 +37,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,6 +87,7 @@ public class websocket_api extends WebSocketListener {
     private Set<Integer> msetSubscriptionCallback;
 
     private ExecutorService mExecutorService;
+    private Set<Pair<object_id<asset_object>, object_id<asset_object>>> hashSetSubsribeMarket;
 
     class BitsharesNoticeMessageDeserializer implements JsonDeserializer<BitsharesNoticeMessage>  {
 
@@ -147,6 +150,7 @@ public class websocket_api extends WebSocketListener {
     public websocket_api(BitsharesNoticeListener listener) {
         msetMarketSubscription = Sets.newConcurrentHashSet();
         msetSubscriptionCallback = Sets.newConcurrentHashSet();
+        hashSetSubsribeMarket = Sets.newConcurrentHashSet();
 
         global_config_object.getInstance().getGsonBuilder().registerTypeAdapter(
                 BitsharesNoticeMessage.class,
@@ -365,11 +369,17 @@ public class websocket_api extends WebSocketListener {
 
         int nRet = 0;
         try {
+            msetSubscriptionCallback.clear();
             boolean bLogin = login("", "");
             if (bLogin == true) {
                 _nDatabaseId = get_websocket_bitshares_api_id("database");
                 _nHistoryId = get_websocket_bitshares_api_id("history");
                 _nBroadcastId = get_websocket_bitshares_api_id("network_broadcast");
+                set_subscribe_callback();
+                for (Pair<object_id<asset_object>, object_id<asset_object>> subscribe : hashSetSubsribeMarket) {
+                    subscribe_to_market_impl(subscribe.first, subscribe.second);
+                }
+
             } else {
                 nRet = ERROR_CONNECT_SERVER_FAILD;
             }
@@ -782,6 +792,17 @@ public class websocket_api extends WebSocketListener {
 
     public void subscribe_to_market(object_id<asset_object> base, object_id<asset_object> quote)
             throws NetworkStatusException {
+        if (hashSetSubsribeMarket.contains(new Pair<>(base, quote))) {
+            return;
+        }
+
+        subscribe_to_market_impl(base, quote);
+        return;
+    }
+
+    public synchronized void subscribe_to_market_impl(object_id<asset_object> base, object_id<asset_object> quote)
+            throws NetworkStatusException {
+
         Call callObject = new Call();
         callObject.id = mnCallId.getAndIncrement();
         callObject.method = "call";
@@ -800,6 +821,8 @@ public class websocket_api extends WebSocketListener {
         Reply<Object> reply = sendForReplyImpl(callObject, replyObject);
 
         msetMarketSubscription.add(callObject.id);
+
+        hashSetSubsribeMarket.add(new Pair<>(base, quote));
 
         return;
     }

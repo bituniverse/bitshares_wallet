@@ -39,6 +39,9 @@ public interface BitsharesDao {
     @Delete
     void deleteBalance(List<BitsharesAsset> bitsharesAssetList);
 
+    @Delete
+    void deleteOperationHistory(List<BitsharesOperationHistory> bitsharesOperationHistoryList);
+
     @Query("select balance.id as id, balance.currency as quote, ticker.base as base, " +
             "sum(balance.amount) as amount, sum(balance.amount * ticker.latest * BTS.precision / balance.precision) as total, balance.precision as quote_precision, " +
             "BTS.precision as base_precision, sum(balance.amount * ticker.latest / balance.precision * CURRENCY.precision * currency_ticker.latest) as balance, " +
@@ -76,6 +79,12 @@ public interface BitsharesDao {
 
     @Query("select * from asset_object")
     List<BitsharesAssetObject> queryAssetObject();
+
+    @Query("select * from balance")
+    List<BitsharesAsset> queryBalanceList();
+
+    @Query("select * from operation_history")
+    List<BitsharesOperationHistory> queryOperationHistoryList();
 
     @Query("select * from asset_object where asset_id = :strAssetId ")
     BitsharesAssetObject queryAssetObjectById(String strAssetId);
