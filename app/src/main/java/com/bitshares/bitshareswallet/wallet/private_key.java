@@ -110,29 +110,27 @@ public class private_key {
 
     public compact_signature sign_compact(sha256_object digest, boolean require_canonical ) {
         compact_signature signature = null;
-        try {
-            final HmacPRNG prng = new HmacPRNG(key_data);
-            RandomSource randomSource = new RandomSource() {
-                @Override
-                public void nextBytes(byte[] bytes) {
-                    prng.nextBytes(bytes);
-                }
-            };
 
-            while (true) {
-                InMemoryPrivateKey inMemoryPrivateKey = new InMemoryPrivateKey(key_data);
-                SignedMessage signedMessage = inMemoryPrivateKey.signHash(new Sha256Hash(digest.hash), randomSource);
-                byte[] byteCompact = signedMessage.bitcoinEncodingOfSignature();
-                signature = new compact_signature(byteCompact);
-
-                boolean bResult = public_key.is_canonical(signature);
-                if (bResult == true) {
-                    break;
-                }
+        SecureRandom secureRandom = new SecureRandom();
+        RandomSource randomSource = new RandomSource() {
+            @Override
+            public void nextBytes(byte[] bytes) {
+                secureRandom.nextBytes(bytes);
             }
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
+        };
+
+        while (true) {
+            InMemoryPrivateKey inMemoryPrivateKey = new InMemoryPrivateKey(key_data);
+            SignedMessage signedMessage = inMemoryPrivateKey.signHash(new Sha256Hash(digest.hash), randomSource);
+            byte[] byteCompact = signedMessage.bitcoinEncodingOfSignature();
+            signature = new compact_signature(byteCompact);
+
+            boolean bResult = public_key.is_canonical(signature);
+            if (bResult == true) {
+                break;
+            }
         }
+
 
         return signature;
     }
